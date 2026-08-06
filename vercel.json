@@ -1,6 +1,8 @@
 {
   "cleanUrls": true,
   "trailingSlash": true,
+  "analytics": true,
+  "speedInsights": { "enabled": true },
   "headers": [
     {
       "source": "/(.*)",

@@ -5,12 +5,12 @@
 let narrating=false,activeAudio=null,narGeneration=0,narAbort=null,activeUtterance=null;
 let trActive=false,trWordEls=[],trCurrentIdx=-1,trAnimFrame=0;
 
-function $(id){return document.getElementById(id)}
+function _el(id){return document.getElementById(id)}
 function stripHTML(s){return s.replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim()}
 
 /* ── transcript bar ── */
 function trShow(words){
-  const bar=$('transcript-bar'),tw=$('tr-words');
+  const bar=_el('transcript-bar'),tw=_el('tr-words');
   if(!bar||!tw)return;
   bar.classList.add('active');trActive=true;
   tw.innerHTML=words.map(w=>`<span class="tw">${w}</span>`).join('');
@@ -26,18 +26,18 @@ function trHighlight(idx){
   trCurrentIdx=idx;
   const el=trWordEls[idx],container=el.parentElement.parentElement;
   const offset=el.offsetLeft+el.offsetWidth/2-container.offsetWidth/2;
-  $('tr-words').style.transform=`translateX(${-offset}px)`;
-  $('tr-words').style.transition='transform .18s ease';
+  _el('tr-words').style.transform=`translateX(${-offset}px)`;
+  _el('tr-words').style.transition='transform .18s ease';
 }
 function trHide(){
-  const bar=$('transcript-bar');
+  const bar=_el('transcript-bar');
   if(bar)bar.classList.remove('active');
   trActive=false;
-  const tw=$('tr-words');if(tw)tw.innerHTML='';
+  const tw=_el('tr-words');if(tw)tw.innerHTML='';
   trCurrentIdx=-1;
 }
 
-/* ── stop ── */
+/* ── stop — kills everything: audio, speech, fetch, transcript ── */
 function stopNarration(){
   narGeneration++;
   if('speechSynthesis'in window)speechSynthesis.cancel();
@@ -71,20 +71,21 @@ function narrateBrowser(text,words,cb,gen){
   },50);
 }
 
-/* ── main narrate ── */
+/* ── main narrate — stops any existing narration first ── */
 function narrateText(text,cb){
-  stopNarration();narrating=true;updateNarratorBtn();
+  stopNarration();
+  narrating=true;updateNarratorBtn();
   const gen=narGeneration;
   const words=text.split(/\s+/).filter(w=>w.length>0);
   trShow(words);
   narAbort=new AbortController();
-  fetch('/api/tts',{
+  fetch('/api/tts/',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({text}),
     signal:narAbort.signal
   })
-  .then(res=>{if(!res.ok)throw new Error();return res.blob()})
+  .then(res=>{if(!res.ok)throw new Error('TTS '+res.status);return res.blob()})
   .then(blob=>{
     if(gen!==narGeneration)return;
     const audio=new Audio(URL.createObjectURL(blob));
@@ -127,16 +128,12 @@ function narrateText(text,cb){
 
 /* ── narrator button ── */
 function updateNarratorBtn(){
-  const b=$('narrator-btn');if(!b)return;
+  const b=_el('narrator-btn');if(!b)return;
   b.classList.toggle('speaking',narrating);
   b.title=narrating?'Stop narration':'Narration';
   b.innerHTML=narrating
     ?'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
     :'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-}
-
-function toggleNarration(){
-  if(narrating)stopNarration();
 }
 
 /* ── bind data-narrate buttons ── */

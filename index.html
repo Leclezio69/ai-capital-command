@@ -40,6 +40,12 @@ a.card .go{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(
 #narrator-btn:hover{background:var(--gold);color:var(--navy-deep);transform:scale(1.08)}
 #narrator-btn.speaking{animation:pulse-ring 1.8s ease infinite;border-color:var(--gold-bright);color:var(--gold-bright)}
 @keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(201,162,39,.35)}50%{box-shadow:0 0 0 10px rgba(201,162,39,0)}}
+#guide-bar{position:fixed;top:0;left:0;right:0;z-index:75;padding:9px 6vw;display:flex;gap:28px;align-items:center;background:rgba(10,22,40,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--navy-line);font:400 9.5px var(--mono);letter-spacing:.07em;color:var(--cream-dim);opacity:0;transform:translateY(-6px);transition:.4s;pointer-events:none;overflow-x:auto;scrollbar-width:none}
+#guide-bar::-webkit-scrollbar{display:none}
+#guide-bar.visible{opacity:1;transform:none;pointer-events:auto}
+.guide-seg{display:flex;gap:5px;align-items:center;white-space:nowrap}
+.guide-seg .gl{color:var(--gold);font-weight:500;text-transform:uppercase;letter-spacing:.13em}
+.guide-seg.gn .gl{color:var(--green)}
 #transcript-bar{position:fixed;bottom:0;left:0;right:0;height:34px;z-index:95;display:flex;align-items:center;background:rgba(10,22,40,.92);backdrop-filter:blur(14px);border-top:1px solid var(--navy-line);opacity:0;transition:.4s;pointer-events:none}
 #transcript-bar.active{opacity:1;pointer-events:auto}
 .tr-track{position:relative;width:100%;height:100%;display:flex;align-items:center;overflow:hidden}
@@ -80,10 +86,19 @@ a.card .go{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(
   </div>
   <div class="foot">RICHARDLECLEZIO.COM · <span>THE 30-DAY AI ECONOMICS AUDIT</span> · SHA-256 EVIDENCE ARCHITECTURE</div>
 </div>
+<div id="guide-bar"></div>
 <button id="narrator-btn" title="Narration" onclick="if(narrating)stopNarration()">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
 </button>
 <div id="transcript-bar"><div class="tr-track"><div class="tr-line-l"></div><div class="tr-line-r"></div><div id="tr-words" class="tr-words"></div></div></div>
 <script src="/narrator.js"></script>
+<script>
+document.getElementById('guide-bar').innerHTML=
+  '<span class="guide-seg"><span class="gl">Do</span> Choose a product to explore.</span>'+
+  '<span class="guide-seg"><span class="gl">Options</span> Crisis simulation (CS-01) or audit instrument (XR-01).</span>'+
+  '<span class="guide-seg"><span class="gl">How</span> Click a card below, or press Listen to hear the briefing.</span>'+
+  '<span class="guide-seg gn"><span class="gl">Next</span> Enter the simulation or run the X-Ray.</span>';
+document.getElementById('guide-bar').classList.add('visible');
+</script>
 </body>
 </html>

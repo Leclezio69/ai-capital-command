@@ -88,6 +88,12 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 #narrator-btn:hover{background:var(--gold);color:var(--navy-deep);transform:scale(1.08)}
 #narrator-btn.speaking{animation:pulse-ring 1.8s ease infinite;border-color:var(--gold-bright);color:var(--gold-bright)}
 @keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(201,162,39,.35)}50%{box-shadow:0 0 0 10px rgba(201,162,39,0)}}
+#guide-bar{position:fixed;top:0;left:0;right:0;z-index:75;padding:9px 6vw;display:flex;gap:28px;align-items:center;background:rgba(10,22,40,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--navy-line);font:400 9.5px var(--mono);letter-spacing:.07em;color:var(--cream-dim);opacity:0;transform:translateY(-6px);transition:.4s;pointer-events:none;overflow-x:auto;scrollbar-width:none}
+#guide-bar::-webkit-scrollbar{display:none}
+#guide-bar.visible{opacity:1;transform:none;pointer-events:auto}
+.guide-seg{display:flex;gap:5px;align-items:center;white-space:nowrap}
+.guide-seg .gl{color:var(--gold);font-weight:500;text-transform:uppercase;letter-spacing:.13em}
+.guide-seg.gn .gl{color:var(--green)}
 #transcript-bar{position:fixed;bottom:0;left:0;right:0;height:34px;z-index:95;display:flex;align-items:center;background:rgba(10,22,40,.92);backdrop-filter:blur(14px);border-top:1px solid var(--navy-line);opacity:0;transition:.4s;pointer-events:none}
 #transcript-bar.active{opacity:1;pointer-events:auto}
 .tr-track{position:relative;width:100%;height:100%;display:flex;align-items:center;overflow:hidden}
@@ -190,12 +196,31 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 </section>
 
 </div>
+<div id="guide-bar"></div>
 <button id="narrator-btn" title="Narration" onclick="if(narrating)stopNarration()">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
 </button>
 <div id="transcript-bar"><div class="tr-track"><div class="tr-line-l"></div><div class="tr-line-r"></div><div id="tr-words" class="tr-words"></div></div></div>
 <script src="/narrator.js"></script>
 <script>
+/* ================= GUIDE BAR ================= */
+const GUIDE={
+  intro:{what:'Read the briefing and choose your seat.',when:'This is the opening — every simulation begins here.',how:'Pick CFO (capital allocation) or CAIO (AI operations). Press Listen to hear the briefing.',next:'Round 1 — Margin Sentinel fires.'},
+  sim:{what:'Read the readout, pick an option, set confidence, then sign.',when:'Each round presents a new crisis point.',how:'Select an option, set your confidence slider, then click "Sign and commit decision".',next:'Outcome resolves, then next round.'},
+  outcome:{what:'Read the outcome, then proceed.',when:'After signing your decision.',how:'Review whether the decision succeeded or set back. Click proceed.',next:'Next decision window or the board record.'},
+  debrief:{what:'Review your command grade, calibration, and board narrative.',when:'After all five rounds complete.',how:'Verify the hash chain, export the evidence pack, or run again with the other seat.',next:'The record is sealed.'}
+};
+function updateGuide(id){
+  const g=GUIDE[id];if(!g)return;
+  document.getElementById('guide-bar').innerHTML=
+    '<span class="guide-seg"><span class="gl">Do</span> '+g.what+'</span>'+
+    '<span class="guide-seg"><span class="gl">When</span> '+g.when+'</span>'+
+    '<span class="guide-seg"><span class="gl">How</span> '+g.how+'</span>'+
+    '<span class="guide-seg gn"><span class="gl">Next</span> '+g.next+'</span>';
+  document.getElementById('guide-bar').classList.add('visible');
+}
+updateGuide('intro');
+
 /* ================= SCENARIO DATA ================= */
 const START = {margin:18.0, cost:2400, trust:62, board:70};
 const TARGET_MARGIN = 25;
@@ -301,6 +326,7 @@ async function startSim(s){
   const g={type:"GENESIS",sim:"THE CANVA SHOCK",seat:s,ts:new Date().toISOString(),start:START};
   g.prevHash="0".repeat(64); g.hash=await sha(JSON.stringify({...g,hash:undefined}));
   chain.push(g); renderRound(); window.scrollTo({top:0});
+  updateGuide('sim');
   narrateText("You have taken the "+seatName+" seat. "+ROUNDS[s][0].brief);
 }
 
@@ -362,6 +388,7 @@ async function commit(){
   </div>`;
   _$("commit-btn").disabled=false;
   _$("outcome-zone").scrollIntoView({behavior:"smooth",block:"nearest"});
+  updateGuide('outcome');
   narrateText((success?"Success. ":"Setback. ")+(success?o.ok:o.bad));
 }
 
@@ -369,12 +396,14 @@ function next(){
   round++;
   if(round<5){
     renderRound();window.scrollTo({top:0,behavior:"smooth"});
+    updateGuide('sim');
     narrateText(ROUNDS[seat][round].brief);
   } else debrief();
 }
 
 function debrief(){
   _$("scr-sim").classList.add("hidden"); _$("scr-debrief").classList.remove("hidden"); window.scrollTo({top:0});
+  updateGuide('debrief');
   const avgB=briers.reduce((a,b)=>a+b,0)/briers.length;
   const perf=(M.margin/TARGET_MARGIN)*40 + (M.board/100)*30 + (M.trust/100)*20 + (1-Math.min(avgB,0.5)/0.5)*10;
   let grade="D"; if(perf>=85)grade="A"; else if(perf>=70)grade="B"; else if(perf>=55)grade="C";

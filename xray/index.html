@@ -88,14 +88,23 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   .report{border-radius:0;padding:20px}
 }
 @media (prefers-reduced-motion:reduce){.seal{animation:none}}
-#narrator-btn{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--navy-panel);border:1.5px solid var(--gold);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:999;transition:all .2s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-#narrator-btn:hover{background:var(--gold);color:var(--navy-deep);transform:scale(1.08)}
-#narrator-btn.speaking{animation:pulse-ring 1.8s ease infinite;border-color:var(--gold-bright);color:var(--gold-bright)}
-#narrator-btn.muted{opacity:.45;border-color:var(--navy-line);color:var(--cream-dim)}
-@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(201,162,39,.35)}50%{box-shadow:0 0 0 10px rgba(201,162,39,0)}}
 .listen-btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--gold);background:none;border:1px solid var(--gold);padding:8px 16px;border-radius:4px;cursor:pointer;text-transform:uppercase;margin-top:16px;transition:all .15s}
 .listen-btn:hover{background:var(--gold);color:var(--navy-deep)}
 .listen-btn svg{width:16px;height:16px}
+#narrator-btn{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--navy-panel);border:1.5px solid var(--gold);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:999;transition:all .2s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+#narrator-btn:hover{background:var(--gold);color:var(--navy-deep);transform:scale(1.08)}
+#narrator-btn.speaking{animation:pulse-ring 1.8s ease infinite;border-color:var(--gold-bright);color:var(--gold-bright)}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(201,162,39,.35)}50%{box-shadow:0 0 0 10px rgba(201,162,39,0)}}
+#transcript-bar{position:fixed;bottom:0;left:0;right:0;height:34px;z-index:95;display:flex;align-items:center;background:rgba(10,22,40,.92);backdrop-filter:blur(14px);border-top:1px solid var(--navy-line);opacity:0;transition:.4s;pointer-events:none}
+#transcript-bar.active{opacity:1;pointer-events:auto}
+.tr-track{position:relative;width:100%;height:100%;display:flex;align-items:center;overflow:hidden}
+.tr-line-l,.tr-line-r{position:absolute;top:50%;height:1px;background:var(--navy-line)}
+.tr-line-l{left:0;right:calc(50% + 4em)}
+.tr-line-r{left:calc(50% + 4em);right:0}
+.tr-words{position:absolute;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font:400 11px var(--mono);color:var(--cream-dim);transition:none;white-space:nowrap}
+.tr-words .tw{transition:color .12s,transform .12s,opacity .12s;opacity:.35}
+.tr-words .tw.near{opacity:.55}
+.tr-words .tw.current{color:var(--gold-bright);opacity:1;font-weight:500;transform:scale(1.18)}
 </style>
 </head>
 <body>
@@ -106,7 +115,7 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   <div class="eyebrow">Leclezio Consulting · Audit Instrument · XR-01</div>
   <h1>AI SPEND X-RAY</h1>
   <p class="sub">The instrument behind the 30-Day AI Economics Audit. Load your usage exports; receive true AI spend, unallocated cost, cost-per-outcome verdicts, margin forecasts, and a board-grade report — sealed in a verifiable SHA-256 evidence chain. <strong style="color:var(--gold-bright)">Nothing leaves this browser.</strong> No upload, no server, no telemetry.</p>
-  <button class="listen-btn" onclick="narrateXrayIntro()">
+  <button class="listen-btn" data-narrate="AI Spend X-Ray. The instrument behind the 30-Day AI Economics Audit. Load your usage exports and receive true AI spend, unallocated cost, cost-per-outcome verdicts, margin forecasts, and a board-grade report. Sealed in a verifiable SHA-256 evidence chain. Nothing leaves this browser. No upload. No server. No telemetry.">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
     Listen to briefing
   </button>
@@ -226,57 +235,15 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 </section>
 
 </div>
-<button id="narrator-btn" title="Narration" onclick="Narrator.toggle()">
+<button id="narrator-btn" title="Narration" onclick="if(narrating)stopNarration()">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
 </button>
-<script>
-/* ============ NARRATOR ============ */
-const Narrator={
-  queue:[],playing:false,muted:false,audio:null,cache:new Map(),
-  async speak(text){
-    if(this.muted)return;
-    this.queue.push(text);
-    if(!this.playing)this._next();
-  },
-  async _next(){
-    if(!this.queue.length){this.playing=false;this._ui();return}
-    this.playing=true;this._ui();
-    const text=this.queue.shift();
-    try{
-      let blob=this.cache.get(text);
-      if(!blob){
-        const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
-        if(!r.ok)throw new Error('TTS failed');
-        blob=await r.blob();this.cache.set(text,blob);
-      }
-      this.audio=new Audio(URL.createObjectURL(blob));
-      this.audio.onended=()=>this._next();
-      this.audio.onerror=()=>this._next();
-      await this.audio.play();
-    }catch(e){console.error('Narration:',e);this._next()}
-  },
-  stop(){this.queue=[];if(this.audio){this.audio.pause();this.audio=null}this.playing=false;this._ui()},
-  toggle(){this.muted=!this.muted;if(this.muted)this.stop();this._ui()},
-  _ui(){
-    const b=document.getElementById('narrator-btn');if(!b)return;
-    b.classList.toggle('speaking',this.playing);
-    b.classList.toggle('muted',this.muted);
-    b.title=this.muted?'Unmute narration':this.playing?'Speaking...':'Narration';
-    b.innerHTML=this.muted
-      ?'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
-      :'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
-  }
-};
-function stripHTML(s){return s.replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\s+/g,' ').trim()}
-function narrateXrayIntro(){
-  Narrator.stop();
-  Narrator.speak("AI Spend X-Ray. The instrument behind the 30-Day AI Economics Audit. Load your usage exports and receive true AI spend, unallocated cost, cost-per-outcome verdicts, margin forecasts, and a board-grade report. Sealed in a verifiable SHA-256 evidence chain. Nothing leaves this browser. No upload. No server. No telemetry.");
-}
-</script>
+<div id="transcript-bar"><div class="tr-track"><div class="tr-line-l"></div><div class="tr-line-r"></div><div id="tr-words" class="tr-words"></div></div></div>
+<script src="/narrator.js"></script>
 <script>
 /* ============ STATE ============ */
 let usage=[], extra=[], budget=0, agg=null, outcomes=null, forecast=null, chain=[], reportText="";
-const $=id=>document.getElementById(id);
+const _$=id=>document.getElementById(id);
 const money=n=>"$"+n.toLocaleString(undefined,{maximumFractionDigits:0});
 const money2=n=>"$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 
@@ -286,7 +253,7 @@ async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncod
 const ORDER=["intake","ledger","outcomes","forecast","report","evidence"];
 let unlocked={intake:true};
 function go(t){ if(!unlocked[t])return;
-  ORDER.forEach(x=>{$("t-"+x).classList.toggle("hidden",x!==t);
+  ORDER.forEach(x=>{_$("t-"+x).classList.toggle("hidden",x!==t);
     document.querySelector(`[data-t="${x}"]`).classList.toggle("on",x===t)});
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -304,7 +271,7 @@ function parseCSV(text){
 }
 function loadFile(input,target){
   const f=input.files[0]; if(!f)return;
-  const r=new FileReader(); r.onload=()=>$(target).value=r.result; r.readAsText(f);
+  const r=new FileReader(); r.onload=()=>_$(target).value=r.result; r.readAsText(f);
 }
 
 /* ============ SAMPLE DATA ============ */
@@ -333,8 +300,8 @@ function loadSample(){
       if(failR>0)csv+=`${day},${prov},${model},${wl},${team},${Math.round(c*failR)},${Math.round(ii*failR)},0,${(cc*failR).toFixed(2)},failed\n`;
     });
   });
-  $("csv-usage").value=csv.trim();
-  $("csv-extra").value=
+  _$("csv-usage").value=csv.trim();
+  _$("csv-extra").value=
 `category,description,monthly_cost_usd
 Vector infrastructure,Managed vector DB + embeddings pipeline,6400
 Human review,Contract QA reviewers for kyc-review outputs,11200
@@ -342,17 +309,16 @@ AI SaaS,Copilot seat licences (340 seats),10200
 Compliance,Model-risk documentation & monitoring,4800
 Committed minimum,Unused portion of committed-use agreement,3900
 Data,Labeling & evaluation data vendors,2600`;
-  $("budget").value=75000;
+  _$("budget").value=75000;
 }
 
 /* ============ RUN ============ */
 async function runXray(){
-  $("intake-err").textContent="";
-  usage=parseCSV($("csv-usage").value);
-  extra=parseCSV($("csv-extra").value);
-  budget=parseFloat($("budget").value)||0;
-  if(!usage.length){$("intake-err").textContent="No usage rows parsed. Paste or upload a usage CSV, or load the sample dataset.";return}
-  // aggregate
+  _$("intake-err").textContent="";
+  usage=parseCSV(_$("csv-usage").value);
+  extra=parseCSV(_$("csv-extra").value);
+  budget=parseFloat(_$("budget").value)||0;
+  if(!usage.length){_$("intake-err").textContent="No usage rows parsed. Paste or upload a usage CSV, or load the sample dataset.";return}
   const byProv={},byWL={};let total=0,waste=0,unalloc=0,calls=0,toks=0;
   usage.forEach(r=>{
     const c=parseFloat(r.cost_usd)||0; total+=c;
@@ -367,17 +333,15 @@ async function runXray(){
   });
   const extraTotal=extra.reduce((a,r)=>a+(parseFloat(r.monthly_cost_usd)||0),0);
   agg={total,waste,unalloc,calls,toks,byProv,byWL,extraTotal,trueTotal:total+extraTotal,invoiceShare:total/(total+extraTotal)};
-  // genesis + intake block
   chain=[];
   const g={type:"GENESIS",artifact:"AI SPEND X-RAY",ts:new Date().toISOString(),prevHash:"0".repeat(64)};
   g.hash=await sha(JSON.stringify({...g,hash:undefined})); chain.push(g);
-  await push("INTAKE",{usageRows:usage.length,extraRows:extra.length,budget,usageFingerprint:await sha($("csv-usage").value)});
+  await push("INTAKE",{usageRows:usage.length,extraRows:extra.length,budget,usageFingerprint:await sha(_$("csv-usage").value)});
   await push("LEDGER",{trueTotal:+agg.trueTotal.toFixed(2),invoiceTotal:+total.toFixed(2),hidden:+extraTotal.toFixed(2),waste:+waste.toFixed(2),unallocated:+unalloc.toFixed(2)});
   renderLedger(); buildOutcomeInputs();
   ["ledger","outcomes","forecast"].forEach(unlock);
   go("ledger");
-  Narrator.stop();
-  Narrator.speak(stripHTML($("ledger-note").innerHTML));
+  narrateText(stripHTML(_$("ledger-note").innerHTML));
 }
 
 async function push(type,payload){
@@ -388,41 +352,41 @@ async function push(type,payload){
 /* ============ LEDGER ============ */
 function renderLedger(){
   const a=agg;
-  $("ledger-kpis").innerHTML=`
+  _$("ledger-kpis").innerHTML=`
    <div class="kpi gold"><div class="lab">True AI spend / mo</div><div class="val">${money(a.trueTotal)}</div></div>
    <div class="kpi ${a.unalloc>0?"warn":"good"}"><div class="lab">Unallocated spend</div><div class="val">${money(a.unalloc)}</div></div>
    <div class="kpi warn"><div class="lab">Retry &amp; failure waste</div><div class="val">${money(a.waste)}</div></div>
    <div class="kpi"><div class="lab">Invoice captures</div><div class="val">${(a.invoiceShare*100).toFixed(0)}%</div></div>`;
   const provRows=Object.entries(a.byProv).sort((x,y)=>y[1]-x[1]);
-  $("tbl-provider").innerHTML="<tr><th>Provider</th><th class='num'>Cost</th><th class='num'>Share</th></tr>"+
+  _$("tbl-provider").innerHTML="<tr><th>Provider</th><th class='num'>Cost</th><th class='num'>Share</th></tr>"+
     provRows.map(([p,c])=>`<tr><td><b>${p}</b></td><td class='num'>${money(c)}</td><td class='num'>${(c/a.total*100).toFixed(1)}%<div class="bar"><i style="width:${(c/a.total*100)}%"></i></div></td></tr>`).join("")+
     `<tr class='total'><td>Model &amp; API total</td><td class='num'>${money(a.total)}</td><td></td></tr>`;
   const wlRows=Object.entries(a.byWL).sort((x,y)=>y[1].cost-x[1].cost);
-  $("tbl-workload").innerHTML="<tr><th>Workload</th><th>Team</th><th class='num'>Cost</th><th class='num'>Waste</th></tr>"+
+  _$("tbl-workload").innerHTML="<tr><th>Workload</th><th>Team</th><th class='num'>Cost</th><th class='num'>Waste</th></tr>"+
     wlRows.map(([w,d])=>`<tr><td><b>${w}</b></td><td>${d.team}</td><td class='num'>${money(d.cost)}</td><td class='num' style="color:${d.waste>d.cost*0.08?'var(--red)':'inherit'}">${money(d.waste)}</td></tr>`).join("");
-  $("tbl-extra").innerHTML="<tr><th>Category</th><th>Description</th><th class='num'>Monthly</th></tr>"+
+  _$("tbl-extra").innerHTML="<tr><th>Category</th><th>Description</th><th class='num'>Monthly</th></tr>"+
     (extra.length?extra.map(r=>`<tr><td><b>${r.category}</b></td><td>${r.description}</td><td class='num'>${money(parseFloat(r.monthly_cost_usd)||0)}</td></tr>`).join(""):"<tr><td colspan='3'>None entered — if this is genuinely zero, you are the first organization for which that is true.</td></tr>")+
     `<tr class='total'><td colspan='2'>Hidden cost total</td><td class='num'>${money(a.extraTotal)}</td></tr>`;
   const concRow=provRows[0];
-  $("ledger-note").innerHTML=`<strong style="color:var(--gold-bright)">Finding.</strong> The provider invoice captures ${(a.invoiceShare*100).toFixed(0)}% of true AI cost. ${money(a.unalloc)} (${(a.unalloc/a.trueTotal*100).toFixed(1)}%) has no workload owner and therefore no accountability, and ${money(a.waste)} is retries and failures — spend that produced nothing and was billed anyway. Vendor concentration: ${concRow[0]} carries ${(concRow[1]/a.total*100).toFixed(0)}% of model spend.`;
+  _$("ledger-note").innerHTML=`<strong style="color:var(--gold-bright)">Finding.</strong> The provider invoice captures ${(a.invoiceShare*100).toFixed(0)}% of true AI cost. ${money(a.unalloc)} (${(a.unalloc/a.trueTotal*100).toFixed(1)}%) has no workload owner and therefore no accountability, and ${money(a.waste)} is retries and failures — spend that produced nothing and was billed anyway. Vendor concentration: ${concRow[0]} carries ${(concRow[1]/a.total*100).toFixed(0)}% of model spend.`;
 }
 
 /* ============ OUTCOMES ============ */
 const DEFAULT_OUTCOMES={"kyc-review":[1400,9],"support-copilot":[9800,2.1],"research-briefs":[240,180],"payment-exceptions":[620,18],"doc-summarizer":[2100,1.4]};
 function buildOutcomeInputs(){
   const wls=Object.keys(agg.byWL).filter(w=>w!=="— unallocated —");
-  $("outcome-inputs").innerHTML=wls.map((w,i)=>{
+  _$("outcome-inputs").innerHTML=wls.map((w,i)=>{
     const d=DEFAULT_OUTCOMES[w]||["",""];
     return `<div class="outrow"><div class="wname">${w}</div>
       <input type="number" id="out-n-${i}" placeholder="outcomes / month" value="${d[0]}" min="0">
       <input type="number" id="out-v-${i}" placeholder="value per outcome $" value="${d[1]}" min="0" step="0.01"></div>`}).join("");
-  $("outcome-inputs").dataset.wls=JSON.stringify(wls);
+  _$("outcome-inputs").dataset.wls=JSON.stringify(wls);
 }
 async function calcOutcomes(){
-  const wls=JSON.parse($("outcome-inputs").dataset.wls);
-  const loadFactor=agg.trueTotal/agg.total; // spread hidden costs pro-rata
+  const wls=JSON.parse(_$("outcome-inputs").dataset.wls);
+  const loadFactor=agg.trueTotal/agg.total;
   outcomes=wls.map((w,i)=>{
-    const n=parseFloat($("out-n-"+i).value)||0, v=parseFloat($("out-v-"+i).value)||0;
+    const n=parseFloat(_$("out-n-"+i).value)||0, v=parseFloat(_$("out-v-"+i).value)||0;
     const loaded=agg.byWL[w].cost*loadFactor;
     const cpo=n>0?loaded/n:null;
     const ratio=(n*v)>0?(n*v)/loaded:0;
@@ -433,10 +397,10 @@ async function calcOutcomes(){
     else if(ratio>=0.8){verdict="REDESIGN";cls="v-redesign"}
     return {w,n,v,loaded,cpo,ratio,verdict,cls};
   });
-  $("tbl-outcomes").innerHTML="<tr><th>Workload</th><th class='num'>Loaded cost/mo</th><th class='num'>Cost / outcome</th><th class='num'>Value ratio</th><th>Verdict</th></tr>"+
+  _$("tbl-outcomes").innerHTML="<tr><th>Workload</th><th class='num'>Loaded cost/mo</th><th class='num'>Cost / outcome</th><th class='num'>Value ratio</th><th>Verdict</th></tr>"+
     outcomes.map(o=>`<tr><td><b>${o.w}</b></td><td class='num'>${money(o.loaded)}</td><td class='num'>${o.cpo!=null?money2(o.cpo):"—"}</td><td class='num'>${o.n?o.ratio.toFixed(2)+"×":"—"}</td><td><span class="verdict ${o.cls}">${o.verdict}</span></td></tr>`).join("")+
     `<tr><td><b>— unallocated —</b></td><td class='num'>${money(agg.unalloc*(agg.trueTotal/agg.total))}</td><td class='num'>—</td><td class='num'>—</td><td><span class="verdict v-term">UNOWNED</span></td></tr>`;
-  $("outcome-results-panel").classList.remove("hidden");
+  _$("outcome-results-panel").classList.remove("hidden");
   await push("OUTCOMES",{verdicts:outcomes.map(o=>({workload:o.w,costPerOutcome:o.cpo!=null?+o.cpo.toFixed(4):null,valueRatio:+o.ratio.toFixed(3),verdict:o.verdict}))});
   renderForecast();
   const scale=outcomes.filter(o=>o.verdict==="SCALE"), term=outcomes.filter(o=>o.verdict==="TERMINATE"), redesign=outcomes.filter(o=>o.verdict==="REDESIGN");
@@ -444,15 +408,15 @@ async function calcOutcomes(){
   if(scale.length)verdictNarr+=scale.map(o=>o.w).join(", ")+(scale.length>1?" warrant":" warrants")+" scaled investment. ";
   if(redesign.length)verdictNarr+=redesign.map(o=>o.w).join(", ")+(redesign.length>1?" require":" requires")+" redesign before further funding. ";
   if(term.length)verdictNarr+=term.map(o=>o.w).join(", ")+" should be terminated or fundamentally restructured. ";
-  Narrator.stop();
-  Narrator.speak(verdictNarr);
+  narrateText(verdictNarr);
 }
 
 /* ============ FORECAST ============ */
+let _forecastNarrated=false;
 function renderForecast(){
   if(!agg)return;
-  const g=parseInt($("growth").value)/100;
-  $("growth-val").textContent=Math.round(g*100)+"% / month";
+  const g=parseInt(_$("growth").value)/100;
+  _$("growth-val").textContent=Math.round(g*100)+"% / month";
   const variable=agg.total, fixed=agg.extraTotal;
   let rows="",breach=null,cur=variable;
   for(let m=1;m<=12;m++){
@@ -463,17 +427,17 @@ function renderForecast(){
     if(m<=6||m===9||m===12)
       rows+=`<tr><td>Month ${m}</td><td class='num'>${money(cur)}</td><td class='num'>${money(fixed)}</td><td class='num' style="color:${over?'var(--red)':'inherit'}"><b>${money(tot)}</b></td><td class='num'>${budget?((tot/budget*100).toFixed(0)+"%"):"—"}</td></tr>`;
   }
-  $("tbl-forecast").innerHTML="<tr><th>Horizon</th><th class='num'>Variable (model)</th><th class='num'>Fixed (hidden)</th><th class='num'>Total</th><th class='num'>vs budget</th></tr>"+rows;
+  _$("tbl-forecast").innerHTML="<tr><th>Horizon</th><th class='num'>Variable (model)</th><th class='num'>Fixed (hidden)</th><th class='num'>Total</th><th class='num'>vs budget</th></tr>"+rows;
   const y1=variable*Math.pow(1+g,12)+fixed;
   forecast={growth:g,breachMonth:breach,month12Total:y1,wasteAnnualized:agg.waste*12};
-  $("fc-kpis").innerHTML=`
+  _$("fc-kpis").innerHTML=`
    <div class="kpi"><div class="lab">Current true spend/mo</div><div class="val">${money(agg.trueTotal)}</div></div>
    <div class="kpi ${breach?"warn":"good"}"><div class="lab">Budget breach</div><div class="val">${budget?(breach?"Month "+breach:"None in 12mo"):"No budget set"}</div></div>
    <div class="kpi gold"><div class="lab">Month-12 run rate</div><div class="val">${money(y1)}</div></div>
    <div class="kpi warn"><div class="lab">Annualized waste</div><div class="val">${money(agg.waste*12)}</div></div>`;
-  $("fc-note").innerHTML=`<strong style="color:var(--gold-bright)">Finding.</strong> At ${Math.round(g*100)}% monthly growth, ${budget?(breach?`AI spend breaches the approved ${money(budget)} budget in month ${breach} — the time to act is before that month, not after the invoice that proves it.`:`AI spend stays within the approved ${money(budget)} budget across 12 months at this growth rate.`):"no budget was set — an AI estate without a budget boundary is a forecast, not a plan."} Retry and failure waste annualizes to ${money(agg.waste*12)} — recoverable with routing and circuit-breaker discipline, no quality trade required.`;
+  _$("fc-note").innerHTML=`<strong style="color:var(--gold-bright)">Finding.</strong> At ${Math.round(g*100)}% monthly growth, ${budget?(breach?`AI spend breaches the approved ${money(budget)} budget in month ${breach} — the time to act is before that month, not after the invoice that proves it.`:`AI spend stays within the approved ${money(budget)} budget across 12 months at this growth rate.`):"no budget was set — an AI estate without a budget boundary is a forecast, not a plan."} Retry and failure waste annualizes to ${money(agg.waste*12)} — recoverable with routing and circuit-breaker discipline, no quality trade required.`;
   unlock("report");
-  if(!window._forecastNarrated){window._forecastNarrated=true;Narrator.stop();Narrator.speak(stripHTML($("fc-note").innerHTML))}
+  if(!_forecastNarrated){_forecastNarrated=true;narrateText(stripHTML(_$("fc-note").innerHTML))}
 }
 
 /* ============ REPORT ============ */
@@ -498,12 +462,11 @@ async function buildReport(){
    <h2>5 · Recommended actions</h2>
    <p>(i) Assign an owner and an AI Capital Contract to every workload — unallocated spend should reach zero within one quarter. (ii) Recover retry waste through routing thresholds and circuit breakers. (iii) Fund SCALE-verdict workloads and gate all others on evidence milestones. (iv) Establish Margin Sentinel monitoring so budget breaches are forecast, never discovered. All figures in this report are sealed in the attached SHA-256 evidence chain and can be independently re-verified.</p>
    <div class="sealline">LECLEZIO CONSULTING CORPORATION · THE STUDIO · AI SPEND X-RAY XR-01 · EVIDENCE CHAIN ${chain.length} BLOCKS</div>`;
-  $("board-report").innerHTML=html;
-  reportText=$("board-report").innerText;
+  _$("board-report").innerHTML=html;
+  reportText=_$("board-report").innerText;
   await push("FORECAST",{growth:f.growth,breachMonth:f.breachMonth,month12Total:+f.month12Total.toFixed(2)});
-  Narrator.stop();
-  Narrator.speak("The board report is ready. "+stripHTML($("board-report").querySelector("p").innerHTML));
   unlock("report");unlock("evidence");
+  narrateText("The board report is ready. "+stripHTML(_$("board-report").querySelector("p").innerHTML));
 }
 
 /* ============ EVIDENCE ============ */
@@ -512,7 +475,7 @@ async function sealEvidence(){
   renderChain();
 }
 function renderChain(){
-  $("chain-view").innerHTML=chain.map((b,i)=>`<div class="block">[${String(i).padStart(2,"0")}] ${b.type} · ${b.ts}<br><span class="hash">${b.hash}</span></div>`).join("");
+  _$("chain-view").innerHTML=chain.map((b,i)=>`<div class="block">[${String(i).padStart(2,"0")}] ${b.type} · ${b.ts}<br><span class="hash">${b.hash}</span></div>`).join("");
 }
 async function verifyChain(){
   renderChain(); let ok=true;
@@ -521,7 +484,7 @@ async function verifyChain(){
     if(h!==b.hash){ok=false;break}
     if(i>0&&b.prevHash!==chain[i-1].hash){ok=false;break}
   }
-  $("verify-result").innerHTML=ok?`<span class="verify-ok">✓ CHAIN VERIFIED — ${chain.length} blocks recomputed and linked. Every figure in this audit is exactly as sealed.</span>`:`<span class="verify-bad">✗ CHAIN BROKEN — the audit record has been altered since sealing.</span>`;
+  _$("verify-result").innerHTML=ok?`<span class="verify-ok">✓ CHAIN VERIFIED — ${chain.length} blocks recomputed and linked. Every figure in this audit is exactly as sealed.</span>`:`<span class="verify-bad">✗ CHAIN BROKEN — the audit record has been altered since sealing.</span>`;
 }
 function exportPack(){
   const pack={artifact:"AI SPEND X-RAY · Evidence Pack",issuer:"Leclezio Consulting Corporation · The Studio",

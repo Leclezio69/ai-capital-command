@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE CANVA SHOCK — A Studio Crisis Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0A1628; --navy-deep:#060D1A; --navy-panel:#0F1E36; --navy-line:#1C2F4E;
+  --gold:#C9A227; --gold-bright:#E4C158; --cream:#F5F0E4; --cream-dim:#C9C2AE;
+  --red:#C34A3A; --green:#4A9B6E; --amber:#D08B2C;
+  --disp:'Space Grotesk',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--navy-deep);color:var(--cream);font-family:var(--disp);min-height:100vh;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.28em;color:var(--gold);text-transform:uppercase}
+h1{font-size:clamp(34px,6vw,58px);font-weight:700;letter-spacing:-.02em;line-height:1.02;margin:10px 0 6px}
+h2{font-size:22px;font-weight:600;margin-bottom:8px}
+.sub{color:var(--cream-dim);max-width:640px}
+.rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:22px 0}
+.panel{background:var(--navy-panel);border:1px solid var(--navy-line);border-radius:6px;padding:22px;margin-bottom:16px}
+.panel.gold{border-color:var(--gold)}
+.mono{font-family:var(--mono)}
+.small{font-size:12px;color:var(--cream-dim)}
+button{font-family:var(--disp);font-weight:600;font-size:14px;cursor:pointer;border-radius:4px;border:1px solid var(--gold);background:transparent;color:var(--gold);padding:11px 20px;letter-spacing:.04em;transition:background .15s,color .15s}
+button:hover{background:var(--gold);color:var(--navy-deep)}
+button.solid{background:var(--gold);color:var(--navy-deep)}
+button.solid:hover{background:var(--gold-bright);border-color:var(--gold-bright)}
+button:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+.hidden{display:none!important}
+.seats{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+@media(max-width:720px){.seats{grid-template-columns:1fr}}
+.seat{background:var(--navy-panel);border:1px solid var(--navy-line);border-radius:6px;padding:24px;cursor:pointer;transition:border-color .15s,transform .15s}
+.seat:hover{border-color:var(--gold);transform:translateY(-2px)}
+.seat h3{font-size:19px;margin:8px 0 6px}
+.seat p{font-size:13px;color:var(--cream-dim)}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+@media(max-width:720px){.hud{grid-template-columns:repeat(2,1fr)}}
+.metric{background:var(--navy-panel);border:1px solid var(--navy-line);border-radius:6px;padding:12px 14px}
+.metric .lab{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--cream-dim);text-transform:uppercase}
+.metric .val{font-family:var(--mono);font-size:22px;font-weight:600;margin-top:4px}
+.metric .delta{font-family:var(--mono);font-size:11px;margin-top:2px}
+.up{color:var(--green)}.down{color:var(--red)}.flat{color:var(--cream-dim)}
+.roundtag{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--gold);text-transform:uppercase;margin-bottom:6px}
+.brief{border-left:2px solid var(--gold);padding-left:16px;margin:14px 0;color:var(--cream)}
+.readout{background:var(--navy-deep);border:1px solid var(--navy-line);border-radius:4px;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.8;margin:14px 0;white-space:pre-wrap;color:var(--cream-dim)}
+.readout b{color:var(--gold-bright);font-weight:600}
+.readout .alert{color:var(--red)}
+.opts{display:grid;gap:10px;margin-top:14px}
+.opt{text-align:left;background:var(--navy-deep);border:1px solid var(--navy-line);color:var(--cream);border-radius:5px;padding:14px 16px;font-weight:500;font-size:14px;line-height:1.45}
+.opt:hover{border-color:var(--gold);background:var(--navy-panel);color:var(--cream)}
+.opt.sel{border-color:var(--gold);background:var(--navy-panel);box-shadow:inset 0 0 0 1px var(--gold)}
+.opt .tag{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--gold);display:block;margin-bottom:4px;text-transform:uppercase}
+.confbox{margin-top:18px}
+.confbox label{display:block;font-size:13px;color:var(--cream-dim);margin-bottom:8px}
+input[type=range]{width:100%;accent-color:var(--gold)}
+.confval{font-family:var(--mono);font-size:20px;color:var(--gold-bright);font-weight:600}
+.outcome{margin-top:16px;border-radius:5px;padding:16px 18px;border:1px solid}
+.outcome.ok{border-color:var(--green);background:rgba(74,155,110,.08)}
+.outcome.bad{border-color:var(--red);background:rgba(195,74,58,.08)}
+.outcome .head{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px}
+.outcome.ok .head{color:var(--green)}.outcome.bad .head{color:var(--red)}
+.ledger{font-family:var(--mono);font-size:11px;line-height:1.7;background:var(--navy-deep);border:1px solid var(--navy-line);border-radius:4px;padding:14px;max-height:260px;overflow:auto}
+.block{border-bottom:1px dashed var(--navy-line);padding:8px 0}
+.block:last-child{border-bottom:none}
+.hash{color:var(--gold);word-break:break-all}
+.grade{font-family:var(--mono);font-size:64px;font-weight:600;color:var(--gold-bright);line-height:1}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+@media(max-width:720px){.statgrid{grid-template-columns:1fr}}
+.footer-cta{border:1px solid var(--gold);border-radius:6px;padding:24px;background:linear-gradient(135deg,rgba(201,162,39,.08),transparent)}
+.btnrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.seal{width:54px;height:54px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--gold);text-align:center;line-height:1.3;margin-bottom:14px;animation:sealIn 1.1s ease}
+@keyframes sealIn{from{opacity:0;transform:rotate(-16deg) scale(.85)}to{opacity:1;transform:none}}
+.verify-ok{color:var(--green);font-family:var(--mono);font-size:12px}
+.verify-bad{color:var(--red);font-family:var(--mono);font-size:12px}
+.progress{display:flex;gap:6px;margin-bottom:16px}
+.pip{flex:1;height:3px;background:var(--navy-line);border-radius:2px}
+.pip.done{background:var(--gold)}
+@media (prefers-reduced-motion:reduce){.seal{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ INTRO ============ -->
+<section id="scr-intro">
+  <div class="seal">THE<br>STUDIO</div>
+  <div class="eyebrow">The Studio · Crisis Simulation · CS-01</div>
+  <h1>THE CANVA SHOCK</h1>
+  <p class="sub">Your company's flagship AI feature is a runaway success. It is also quietly destroying gross margin. You have five decision windows before the board meets. Every decision you sign is hash-chained. Nothing can be unsaid.</p>
+  <div class="rule"></div>
+  <div class="panel">
+    <div class="eyebrow">Situation</div>
+    <h2 style="margin-top:6px">Lumina Studio · "Magic Assist"</h2>
+    <p class="small" style="margin-top:6px">Lumina Studio is a design SaaS platform with 180M monthly users. Its AI feature, Magic Assist, has reached 1.42M monthly interactions and is climbing 11% month over month. Margin Sentinel projects the feature turns gross-margin negative at 1.8M interactions — roughly nine weeks out. Subscription price is fixed until the next annual cycle. The board meets in 90 days.</p>
+  </div>
+  <div class="eyebrow" style="margin-top:26px">Choose your seat</div>
+  <div class="seats">
+    <div class="seat" onclick="startSim('CFO')" role="button" tabindex="0" onkeydown="if(event.key==='Enter')startSim('CFO')">
+      <div class="eyebrow">Seat A</div>
+      <h3>Chief Financial Officer</h3>
+      <p>You hold capital-allocation authority and board accountability. Your levers: pricing, contracts, vendor commitments, portfolio funding, termination. Your scoreboard is the P&amp;L.</p>
+    </div>
+    <div class="seat" onclick="startSim('CAIO')" role="button" tabindex="0" onkeydown="if(event.key==='Enter')startSim('CAIO')">
+      <div class="eyebrow">Seat B</div>
+      <h3>Chief AI Officer</h3>
+      <p>You hold operational authority over the AI estate. Your levers: model routing, caching, degradation modes, quality thresholds, the kill switch. Your scoreboard is cost-per-outcome at required quality.</p>
+    </div>
+  </div>
+  <p class="small" style="margin-top:18px">Each round you will state a confidence estimate before the outcome resolves. Calibration is scored with the Brier method, exactly as in THE COMMAND. Your full record exports as a verifiable SHA-256 evidence pack.</p>
+</section>
+
+<!-- ============ SIM ============ -->
+<section id="scr-sim" class="hidden">
+  <div class="eyebrow" id="seat-label"></div>
+  <div class="progress" id="progress"></div>
+  <div class="hud" id="hud"></div>
+  <div class="panel gold" id="round-panel">
+    <div class="roundtag" id="round-tag"></div>
+    <h2 id="round-title"></h2>
+    <div class="brief" id="round-brief"></div>
+    <div class="readout" id="round-readout"></div>
+    <div class="opts" id="opts"></div>
+    <div class="confbox hidden" id="confbox">
+      <label id="conf-question"></label>
+      <input type="range" id="conf" min="5" max="95" value="50" step="5" oninput="document.getElementById('confval').textContent=this.value+'%'">
+      <div class="confval" id="confval">50%</div>
+      <div class="btnrow"><button class="solid" id="commit-btn" onclick="commit()">Sign and commit decision</button></div>
+    </div>
+    <div id="outcome-zone"></div>
+  </div>
+</section>
+
+<!-- ============ DEBRIEF ============ -->
+<section id="scr-debrief" class="hidden">
+  <div class="seal">THE<br>STUDIO</div>
+  <div class="eyebrow">Debrief · Board Record</div>
+  <h1 style="font-size:clamp(28px,5vw,44px)">THE VERDICT</h1>
+  <div class="rule"></div>
+  <div class="statgrid">
+    <div class="panel" style="margin:0;text-align:center"><div class="eyebrow">Command Grade</div><div class="grade" id="grade">—</div></div>
+    <div class="panel" style="margin:0"><div class="eyebrow">Final Position</div><div id="final-metrics" class="readout" style="margin:10px 0 0;border:none;padding:0;background:transparent"></div></div>
+    <div class="panel" style="margin:0"><div class="eyebrow">Calibration</div><div id="calib" class="readout" style="margin:10px 0 0;border:none;padding:0;background:transparent"></div></div>
+  </div>
+  <div class="panel">
+    <div class="eyebrow">Board Narrative</div>
+    <p id="board-narrative" style="margin-top:10px;font-size:15px;line-height:1.7"></p>
+  </div>
+  <div class="panel">
+    <div class="eyebrow">Decision Ledger · SHA-256 Hash Chain</div>
+    <div class="ledger" id="ledger" style="margin-top:10px"></div>
+    <div class="btnrow">
+      <button onclick="verifyChain()">Verify chain integrity</button>
+      <button onclick="exportPack()">Export evidence pack (JSON)</button>
+      <button onclick="location.reload()">Run again · other seat</button>
+    </div>
+    <p id="verify-result" style="margin-top:10px"></p>
+  </div>
+  <div class="footer-cta">
+    <div class="eyebrow">This was a simulation. Your company is not.</div>
+    <h2 style="margin-top:8px">The 30-Day AI Economics Audit</h2>
+    <p class="small" style="max-width:620px;margin-top:6px">Every readout in this simulation — the Margin Sentinel forecast, the Capital Contract breach, the cost-per-outcome verdicts — is produced for real organizations by AI SPEND X-RAY, the audit instrument behind this mission. Complete expenditure map, unallocated cost, margin exposure, portfolio funding recommendations, and a board-grade report with a verifiable evidence pack. Nothing leaves your browser.</p>
+    <p class="mono small" style="margin-top:12px;color:var(--gold)">richardleclezio.com · Leclezio Consulting Corporation · The Studio</p>
+  </div>
+</section>
+
+</div>
+<script>
+/* ================= SCENARIO DATA ================= */
+const START = {margin:18.0, cost:2400, trust:62, board:70};
+const TARGET_MARGIN = 25;
+const CONF_Q = "How confident are you that this action improves Magic Assist gross margin within one quarter without breaching quality thresholds?";
+
+const ROUNDS = {
+CFO:[
+{tag:"Round 1 of 5 · Day 1", title:"THE READOUT", brief:"Margin Sentinel has fired its first red alert. Finance did not see this coming because the provider invoice arrives 30 days in arrears and captures barely 60% of true AI cost.",
+readout:"MARGIN SENTINEL · ALERT MS-114\nFeature: Magic Assist\nInteractions: <b>1.42M/mo</b> · growth +11% MoM\nFully loaded cost: <b>$2.40M/mo</b> (invoice shows $1.41M)\nHidden: retries $210k · human review $340k · vector infra $190k · fallbacks $260k\nGross margin: <b>18.0%</b> · <span class='alert'>margin-negative at 1.8M interactions (~9 weeks)</span>",
+opts:[
+ {t:"Commission an emergency unit-economics audit",d:"Full X-Ray of cost-per-outcome across the feature before touching any lever. 10 working days.",p:.80,dm:+1.5,dc:-40,dt:0,db:+6,ok:"The audit lands in 9 days. Cost-per-design-completed is $0.47 against a defensible ceiling of $0.31. You now negotiate every later decision from evidence, not instinct.",bad:"The audit drags to 3 weeks. The data is good but you have burned a third of your runway gathering it, and the board asks why the first move was a study."},
+ {t:"Freeze all Magic Assist marketing and growth spend",d:"Stop pouring adoption fuel on a margin fire while you assess.",p:.60,dm:+0.8,dc:-120,dt:-3,db:-4,ok:"Growth cools to 4% MoM. You bought roughly six extra weeks of runway at the cost of a bruised CMO.",bad:"Product-led growth barely slows — the feature spreads through templates, not campaigns. You annoyed marketing for two weeks of runway."},
+ {t:"Announce an immediate price increase on the Pro tier",d:"Reprice now, mid-cycle, citing AI capability value.",p:.35,dm:+3.5,dc:0,dt:-9,db:-3,ok:"Churn ticks up only 0.8%. Revenue per user rises 12%. It was brutal and it worked.",bad:"Mid-cycle repricing detonates on social channels. Churn spikes 2.6%, two enterprise renewals stall, and you repriced before you understood the cost base."},
+ {t:"Hold — request one more month of data",d:"The forecast could be wrong. Wait for another cycle.",p:.15,dm:-2.5,dc:+260,dt:0,db:-10,ok:"The growth curve flattens on its own. Lucky.",bad:"Growth accelerates to 14% MoM. You are now six weeks from margin-negative with nothing decided, and Margin Sentinel's forecast error was 3%."}
+]},
+{tag:"Round 2 of 5 · Day 18", title:"THE CONTRACT", brief:"Magic Assist operates under an AI Capital Contract: maximum cost per design completed $0.31. Actual is $0.47. The contract's escalation clause has triggered and lands on your desk, not the CIO's.",
+readout:"CAPITAL CONTRACT MA-2026-07 · BREACH\nOwner: VP Product, Creation\nApproved budget: $1.9M/mo · actual <b>$2.40M/mo</b>\nMax cost/outcome: $0.31 · actual <b>$0.47</b>\nEscalation clause: <span class='alert'>ACTIVE — CFO decision required in 5 days</span>",
+opts:[
+ {t:"Enforce the contract — mandate degradation mode",d:"The CAIO must bring cost/outcome under $0.36 in 30 days using routing, caching and context reduction, or the workload throttles automatically.",p:.70,dm:+4.0,dc:-520,dt:-2,db:+8,ok:"Engineering finds 22% of cost was pure waste — redundant context, uncached repeats, recursive retries. Cost/outcome falls to $0.35 with no measurable quality loss. The contract worked exactly as designed.",bad:"The 30-day clock forces rushed cuts. Cost falls but quality wobbles, and support tickets rise 9%. The mechanism was right; the deadline was too tight."},
+ {t:"Renegotiate the contract ceiling to $0.48",d:"Reset the threshold to reality. The feature is strategic; the ceiling was set before anyone had data.",p:.30,dm:-1.0,dc:+150,dt:0,db:-9,ok:"The board accepts the reset as pragmatic recalibration — this time.",bad:"You have just taught the organization that Capital Contracts are renegotiated the moment they bind. Three other workload owners request ceiling resets within two weeks."},
+ {t:"Escalate to the board immediately",d:"Take the breach to the board with options rather than deciding under delegated authority.",p:.40,dm:0,dc:+120,dt:0,db:-6,ok:"The board appreciates the transparency and hands the decision straight back with a mandate to act.",bad:"The board's only question: 'Why does our CFO need us to enforce our own policy?' Authority delegated upward rarely returns intact."},
+ {t:"Suspend the contract pending strategy review",d:"Pause enforcement while a working group assesses.",p:.15,dm:-2.0,dc:+300,dt:0,db:-12,ok:"The review concludes quickly and recommends enforcement — where you started, three weeks later.",bad:"An unenforced contract is a dashboard. Spend drifts up $300k while the working group schedules its second meeting."}
+]},
+{tag:"Round 3 of 5 · Day 41", title:"THE VENDOR LETTER", brief:"Your primary frontier-model provider announces a 22% price increase on the flagship model, effective in 60 days. Magic Assist routes 78% of its traffic there.",
+readout:"VENDOR NOTICE · PRICING UPDATE\nProvider A flagship model: <b>+22%</b> in 60 days\nCurrent Provider A share of Magic Assist traffic: <b>78%</b>\nUnmitigated impact: <b>+$410k/mo</b>\nCommitted-use discount offer: −18% for a 12-month, $21M minimum commitment",
+opts:[
+ {t:"Fund the proprietary-model track",d:"At this volume the economics cross over. Approve a fine-tuned model for the 60% of traffic that is routine, keeping frontier models for complex cases.",p:.55,dm:+6.5,dc:-780,dt:-1,db:+7,ok:"Six weeks later the fine-tuned model handles routine generation at one-ninth the unit cost, with quality inside tolerance. This is the Canva play executed on purpose instead of in panic.",bad:"The fine-tune underperforms on edge cases and the rollout pauses at 25% of traffic. Directionally right; the savings arrive two quarters late."},
+ {t:"Split traffic across three providers",d:"Reroute to a 45/30/25 multi-vendor mix immediately, negotiating from credible mobility.",p:.65,dm:+3.0,dc:-360,dt:-1,db:+4,ok:"Provider A returns with a 12% concession within three weeks of watching traffic move. Mobility, once demonstrated, is leverage forever.",bad:"Routing complexity bites — subtle output-format differences break two downstream templates. Fixed in a fortnight, but customers noticed."},
+ {t:"Sign the committed-use agreement",d:"Lock −18% for 12 months against a $21M minimum.",p:.35,dm:+1.5,dc:-280,dt:0,db:-2,ok:"The discount lands and usage tracks the commitment almost exactly.",bad:"You have just committed $21M against a workload you may need to shrink, redesign or partially terminate. The discount saved 18%; the commitment removed your best strategic option: using less."},
+ {t:"Pass the increase to customers",d:"Add an 'AI usage' line to Pro pricing at next cycle.",p:.25,dm:+2.0,dc:0,dt:-8,db:-4,ok:"Customers grumble and pay. Barely.",bad:"Competitors screenshot your new fee next to their 'AI included' banner. You have converted a vendor-management problem into a brand problem."}
+]},
+{tag:"Round 4 of 5 · Day 66", title:"THE QUALITY CLIFF", brief:"Cost per outcome is down 24% since Day 1. But the Cost–Quality Frontier Engine is flashing: complaint rate on complex design requests is up, and one enterprise account has opened a quality ticket citing 'degraded output' in a renewal conversation.",
+readout:"COST–QUALITY FRONTIER · DRIFT WARNING\nCost/outcome: $0.47 → <b>$0.36</b>\nComplaints (complex requests): <b>+31%</b>\nNPS delta: <b>−4</b>\nEnterprise renewal at risk: <b>$1.2M ARR</b>\nFrontier analysis: 84% of requests are routine · 16% complex drive 71% of complaints",
+opts:[
+ {t:"Adopt frontier routing — premium model for complex cases only",d:"Classify requests at intake. Route the 16% complex tail to the premium model, keep routine work on the efficient path.",p:.75,dm:-0.5,dc:+140,dt:+7,db:+8,ok:"Complaints on complex work fall back to baseline within three weeks. You are now paying for quality precisely where quality is bought, and nowhere else. This is the frontier, found.",bad:"The intake classifier misroutes 8% of complex cases at first. Two more noisy weeks before the thresholds settle — but the architecture is right."},
+ {t:"Restore premium routing across all traffic",d:"Quality is the brand. Undo the cost work and eat the margin.",p:.30,dm:-5.5,dc:+620,dt:+6,db:-8,ok:"Quality restores instantly. So does the original crisis, which now resumes with less runway.",bad:"You have solved a 16% problem with a 100% solution. Margin Sentinel re-fires within days, and the board notes you reversed your own program."},
+ {t:"Add a human review layer on complex requests",d:"Route complex outputs through a review queue before delivery.",p:.40,dm:-1.5,dc:+310,dt:+4,db:0,ok:"Quality complaints drop. The review queue holds at 4-hour latency — tolerable, expensive.",bad:"You are paying humans to compensate for a routing decision software should make. Latency on complex requests triples and the review cost is permanent, not transitional."},
+ {t:"Hold course — the complaints are noise",d:"NPS deltas bounce. Do nothing.",p:.15,dm:+0.5,dc:0,dt:-9,db:-9,ok:"The complaint spike genuinely was seasonal noise. This time.",bad:"The $1.2M enterprise account churns, citing quality, in an email their CTO forwards to two peer companies. Cost discipline without a quality floor is just decline, invoiced monthly."}
+]},
+{tag:"Round 5 of 5 · Day 90", title:"THE BOARD", brief:"The board meets. Magic Assist's economics are transformed but not finished. The board has one question, and it is not about the past: 'We can allocate a further $15M to AI next year. What do you recommend?'",
+readout:"AI PORTFOLIO CAPITAL MARKET · ALLOCATION RUN\nCandidates: proprietary-model buildout · Magic Assist scale-up ·\n2 new AI features (unvalidated) · workflow-automation program\nEvidence confidence: proprietary track <b>HIGH</b> · new features <b>LOW</b>\nGovernor status: contained $260k avoidable spend this quarter",
+opts:[
+ {t:"Conditional funding under Capital Contracts",d:"Allocate the $15M in tranches: proprietary track funded fully, new features funded to evidence milestones only, each under an executable contract with kill conditions.",p:.80,dm:+3.0,dc:-200,dt:+2,db:+12,ok:"The board approves in one session. One director says it is the first AI capital request they have seen with termination conditions attached, and asks why the rest of the portfolio doesn't work this way. It will.",bad:"Approved, though two directors push back on tranche gating as bureaucratic. They will change their minds the first time a tranche gate catches a failing project — which it will."},
+ {t:"Concentrate everything on the proprietary model",d:"$15M into the one initiative with proven economics.",p:.45,dm:+4.0,dc:-500,dt:0,db:+2,ok:"Concentration pays; the unit-cost advantage compounds.",bad:"The board funds it but notes the absence of a portfolio view. You optimized a project when you were asked to allocate capital."},
+ {t:"Spread evenly across all candidates",d:"$3.75M each. Optionality.",p:.20,dm:0,dc:+250,dt:0,db:-8,ok:"Nothing fails. Nothing compounds either.",bad:"Peanut-butter allocation: every initiative underfunded, none accountable, and the unvalidated features consume real money to produce evidence you could have demanded first."},
+ {t:"Return the capital — recommend against expansion",d:"The estate needs consolidation, not growth.",p:.25,dm:+1.0,dc:-300,dt:0,db:-5,ok:"The board respects the discipline and banks the capital.",bad:"Prudence misread as retreat. Your competitor's proprietary model ships in Q3, and the board remembers who recommended standing still."}
+]}
+],
+CAIO:[
+{tag:"Round 1 of 5 · Day 1", title:"THE READOUT", brief:"Margin Sentinel has fired. The CFO wants a plan by Friday, but you hold the operational levers today. First 72 hours: what do you actually change in the transaction path?",
+readout:"MARGIN SENTINEL · ALERT MS-114\nFeature: Magic Assist · 1.42M interactions/mo · +11% MoM\nFully loaded: <b>$2.40M/mo</b> · margin <b>18.0%</b>\nTelemetry: cache hit rate <b>7%</b> · avg context 41k tokens ·\nretry amplification 1.31x · <span class='alert'>margin-negative at 1.8M interactions</span>",
+opts:[
+ {t:"Ship caching and batching for repeat patterns",d:"38% of requests are near-duplicates of prior generations. Cache aggressively, batch non-urgent renders overnight.",p:.80,dm:+3.5,dc:-430,dt:0,db:+6,ok:"Cache hit rate climbs from 7% to 34% in two weeks. $430k/mo evaporates from the cost line with zero user-visible change. The cheapest token is the one never generated.",bad:"Cache invalidation bugs serve three users stale brand assets. Fixed in 48 hours, but you shipped speed before safety and everyone knows it."},
+ {t:"Cut default context windows by 60%",d:"Average request carries 41k tokens of context; analysis says 15k drives the output.",p:.65,dm:+2.5,dc:-320,dt:-2,db:+3,ok:"Output quality holds within tolerance. The context was mostly ballast — history nobody's model was reading.",bad:"Quality holds on routine work but complex multi-page projects degrade noticeably. You cut context with a scalpel-shaped axe; the frontier work comes later."},
+ {t:"Downgrade default routing to the mid-tier model",d:"Move all traffic one model tier down immediately.",p:.40,dm:+4.5,dc:-640,dt:-7,db:+2,ok:"Most users don't notice. Most.",bad:"Complaint rate rises 19% within ten days, concentrated in exactly the professional segment that pays. Blanket downgrades are margin repair with a quality invoice attached."},
+ {t:"Cap free-tier usage at 20 generations/month",d:"Free users drive 44% of AI cost and 0% of revenue.",p:.50,dm:+3.0,dc:-520,dt:-6,db:-2,ok:"Cost drops sharply; conversion to paid ticks up 0.9%. The freeloader subsidy ends.",bad:"The cap trends on social within a week — 'Lumina nerfs free plan.' Cost falls but the growth funnel your valuation is built on visibly narrows."}
+]},
+{tag:"Round 2 of 5 · Day 18", title:"THE CONTRACT", brief:"The Capital Contract breach ($0.47 actual vs $0.31 ceiling) has escalated. The CFO has enforced degradation mode: you have 30 days to reach $0.36 or the workload auto-throttles. The levers are yours; so is the accountability.",
+readout:"CAPITAL CONTRACT MA-2026-07 · ENFORCEMENT ACTIVE\nRequired: cost/outcome ≤ <b>$0.36</b> in 30 days\nCurrent: <b>$0.47</b>\nAuto-throttle on failure: <span class='alert'>ARMED</span>\nDecomposition: model calls 61% · retries 9% · context 14% · tools 11% · review 5%",
+opts:[
+ {t:"Attack retry amplification first",d:"1.31x retry multiplier means 9% of spend is failure, re-billed. Fix timeout thresholds, add circuit breakers, cap agent recursion at 3.",p:.75,dm:+2.5,dc:-290,dt:+1,db:+6,ok:"Retry multiplier falls to 1.08x. You cut cost by deleting failure, which is the only cost cut that improves quality at the same time.",bad:"Circuit breakers trip too eagerly the first week, failing requests that would have succeeded. Thresholds tuned by day 10; the principle was right."},
+ {t:"Deterministic pre-processing before any LLM call",d:"22% of 'AI' requests are template fills and format conversions software can do for free. Route them to code.",p:.70,dm:+2.0,dc:-260,dt:0,db:+5,ok:"A fifth of the workload turns out not to need a model at all. The most underrated model-routing decision is routing to no model.",bad:"The rules engine covers 15% rather than 22% — edge cases resist determinism. Still a permanent, quality-neutral saving."},
+ {t:"Renegotiate the deadline with the CFO",d:"30 days is reckless; ask for 60 with a milestone at 30.",p:.35,dm:0,dc:+80,dt:0,db:-7,ok:"The CFO grants 45 days against a hard milestone. Reasonable.",bad:"The CFO's reply is one line: 'The contract predates both of us. Ship.' You spent political capital to learn the constraint was real."},
+ {t:"Hit the number with a blanket model downgrade",d:"Guaranteed to reach $0.36. Quality is tomorrow's problem.",p:.30,dm:+4.0,dc:-560,dt:-9,db:-3,ok:"You make the number. The quality debt is now compounding quietly off-ledger.",bad:"You make the number and fail the mission: complaints surge, and the contract's quality clause — which you skimmed — triggers its own escalation. Cost ceilings and quality floors are the same document."}
+]},
+{tag:"Round 3 of 5 · Day 41", title:"THE VENDOR LETTER", brief:"Provider A announces +22% on the flagship model in 60 days. 78% of your traffic runs there. The CFO asks for a technical recommendation with unit economics attached, by Monday.",
+readout:"VENDOR NOTICE · +22% in 60 days\nProvider A traffic share: <b>78%</b> · unmitigated: <b>+$410k/mo</b>\nFine-tune feasibility study: routine traffic (84%) reachable at\n<b>~1/9th unit cost</b> · build window 6–8 weeks · eval suite required",
+opts:[
+ {t:"Recommend the fine-tuned proprietary model for routine traffic",d:"Build the eval suite first, then fine-tune for the 84% routine segment. Frontier models retained for the complex tail.",p:.55,dm:+6.5,dc:-780,dt:-1,db:+7,ok:"Evals gate the rollout honestly; the fine-tune clears them at week 6. Routine generation now costs 11% of what it did, and the vendor letter that caused a crisis triggered your best structural decision.",bad:"The fine-tune stalls at eval — image-consistency edge cases. Rollout holds at 25% while training data improves. Right architecture, longer runway."},
+ {t:"Reroute to a multi-provider mix now",d:"45/30/25 across three providers within three weeks. Portability as negotiating leverage.",p:.65,dm:+3.0,dc:-360,dt:-1,db:+4,ok:"Provider A concedes 12% once traffic visibly moves. Your abstraction layer just paid for itself in one negotiation.",bad:"Output-format drift between providers breaks two template pipelines. Two weeks of normalization work you should have budgeted upfront."},
+ {t:"Recommend the committed-use discount",d:"−18% for a 12-month $21M commitment. Simple, immediate.",p:.35,dm:+1.5,dc:-280,dt:0,db:-2,ok:"The discount holds and usage matches commitment.",bad:"Every efficiency you ship for the next year now works against a spend floor you contracted. You optimized the price and froze the architecture."},
+ {t:"Absorb it — focus engineering elsewhere",d:"The increase is 17% of one line item. Deprioritize.",p:.15,dm:-2.5,dc:+410,dt:0,db:-8,ok:"Other savings coincidentally offset the increase this quarter.",bad:"$410k/mo of pure price-taking, accepted without a counter. The CFO's note asks what, precisely, the AI organization negotiates."}
+]},
+{tag:"Round 4 of 5 · Day 66", title:"THE QUALITY CLIFF", brief:"Your cost work has landed: $0.47 → $0.36. But complaints on complex requests are up 31%, and a $1.2M enterprise account just cited output quality in a renewal call. The Cost–Quality Frontier Engine says the damage is concentrated: 16% of requests, 71% of complaints.",
+readout:"COST–QUALITY FRONTIER · DRIFT WARNING\nComplaints (complex): <b>+31%</b> · NPS <b>−4</b>\nEnterprise renewal at risk: <b>$1.2M ARR</b>\nSegmentation: 84% routine (quality stable) ·\n<b>16% complex → 71% of complaints</b>",
+opts:[
+ {t:"Build intake classification — premium model for the complex 16%",d:"Classify at request time. Complex tail gets the frontier model, routine stays efficient. Pay for quality exactly where it's purchased.",p:.75,dm:-0.5,dc:+140,dt:+7,db:+8,ok:"Three weeks later complex-request complaints are back at baseline and the routine 84% still runs at efficient cost. This is what the frontier looks like: not cheap, not premium — correct.",bad:"The classifier misroutes 8% at launch. Noisy fortnight, then the thresholds settle. The enterprise account renews after a direct demo of the fix."},
+ {t:"Roll back all cost optimizations",d:"Restore the Day-1 configuration everywhere.",p:.30,dm:-5.5,dc:+620,dt:+6,db:-8,ok:"Quality restores. So does the margin crisis, minus 66 days of runway.",bad:"You reversed three months of correct work to fix a problem living in 16% of traffic. The CFO's dashboard re-reddens and the board deck writes itself, unkindly."},
+ {t:"Add human review on complex outputs",d:"Quality assurance by queue.",p:.40,dm:-1.5,dc:+310,dt:+4,db:0,ok:"Complaints fall; the queue holds at 4-hour latency. A workable bridge while classification is built.",bad:"Permanent human cost for a routing problem. Latency triples on exactly the requests premium customers care about most."},
+ {t:"Defend the numbers — the cost program stands",d:"NPS wobbles are noise; the contract required $0.36.",p:.15,dm:+0.5,dc:0,dt:-9,db:-9,ok:"The spike subsides. You were lucky, not right.",bad:"The enterprise account churns. The contract you hit had a quality clause you missed, and 'we made the cost number' is not a sentence that survives contact with a lost logo."}
+]},
+{tag:"Round 5 of 5 · Day 90", title:"THE BOARD", brief:"You present alongside the CFO. The estate is transformed: cost/outcome down, quality recovered, governor active. The board's question comes to you directly: 'Should the Autonomous Budget Governor be granted standing authority — and where must its authority end?'",
+readout:"AUTONOMOUS BUDGET GOVERNOR · AUTHORITY REVIEW\nActions this quarter (approval mode): 47 recommendations ·\n41 accepted · $260k contained\nProposed: autonomous authority for routing, caching, budget\nreallocation ≤20% · <span class='alert'>board must set the constitutional limits</span>",
+opts:[
+ {t:"Constitutionally constrained autonomy",d:"Grant autonomy for reversible economic actions (routing, caching, ≤20% reallocation). Suspension of any customer-facing or regulated workflow requires CFO + owner sign-off. Every action hash-chained to the board record.",p:.80,dm:+3.0,dc:-200,dt:+2,db:+12,ok:"The board approves the constitution unanimously. The chair's summary: 'Autonomy for the reversible, signatures for the consequential, evidence for everything.' It goes in the minutes verbatim.",bad:"Approved with one abstention — a director wants six more months of approval-mode data. The constitution stands; the trust it earns compounds from here."},
+ {t:"Full autonomy within budget",d:"The governor's track record earns broad authority. Human review slows the loop.",p:.35,dm:+4.0,dc:-350,dt:0,db:-6,ok:"Nothing goes wrong this quarter. The unbounded authority remains a loaded instrument on the table.",bad:"Week 5: the governor suspends a low-margin workflow that turns out to feed a regulated client report. Reversed in 3 hours; explained to the regulator over 3 weeks. Authority without constitutional limits is a resignation letter with a delay timer."},
+ {t:"Keep it advisory permanently",d:"Recommendations only, forever. Humans decide.",p:.30,dm:0,dc:+150,dt:0,db:-4,ok:"Safe, slow, defensible. The $260k/quarter containment continues to require meetings.",bad:"Approval latency means the governor catches runaway spend on average 6 days after onset. You built a smoke detector and put it in a drawer."},
+ {t:"Expand authority to include workload termination",d:"Let the governor kill persistently negative workloads autonomously.",p:.15,dm:+1.0,dc:-250,dt:-3,db:-10,ok:"No terminations trigger this quarter, so no one learns what would have happened.",bad:"The board halts the proposal in the meeting. Termination is a capital-allocation decision, and capital allocation is why boards exist. You proposed automating your own accountability."}
+]}
+]};
+
+/* ================= STATE ================= */
+let seat=null, round=0, sel=-1, M={...START}, chain=[], briers=[], resolved=false;
+const $=id=>document.getElementById(id);
+const fmt$=k=>"$"+(k/1000).toFixed(2)+"M";
+
+async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+
+async function startSim(s){
+  seat=s; $("scr-intro").classList.add("hidden"); $("scr-sim").classList.remove("hidden");
+  $("seat-label").textContent="The Studio · CS-01 · Seat: "+(s==="CFO"?"Chief Financial Officer":"Chief AI Officer");
+  const g={type:"GENESIS",sim:"THE CANVA SHOCK",seat:s,ts:new Date().toISOString(),start:START};
+  g.prevHash="0".repeat(64); g.hash=await sha(JSON.stringify({...g,hash:undefined}));
+  chain.push(g); renderRound(); window.scrollTo({top:0});
+}
+
+function renderHUD(prev){
+  const items=[["Gross Margin",M.margin.toFixed(1)+"%",prev?M.margin-prev.margin:0,"pp"],
+    ["AI Cost / mo",fmt$(M.cost),prev?-(M.cost-prev.cost):0,"k",true],
+    ["Customer Trust",M.trust.toFixed(0),prev?M.trust-prev.trust:0,""],
+    ["Board Confidence",M.board.toFixed(0),prev?M.board-prev.board:0,""]];
+  $("hud").innerHTML=items.map(([l,v,d,u])=>{
+    let cls="flat",txt="—";
+    if(Math.abs(d)>0.01){
+      cls=d>0?"up":"down";
+      if(u==="k"){txt=(d>0?"−":"+")+fmt$(Math.abs(d))} // d is inverted for cost: positive = cost reduced
+      else{txt=(d>0?"+":"")+d.toFixed(1)+(u==="pp"?" pp":"")}
+    }
+    return `<div class="metric"><div class="lab">${l}</div><div class="val">${v}</div><div class="delta ${cls}">${txt}</div></div>`}).join("");
+  $("progress").innerHTML=[0,1,2,3,4].map(i=>`<div class="pip ${i<round?"done":""}"></div>`).join("");
+}
+
+function renderRound(){
+  resolved=false; sel=-1;
+  const R=ROUNDS[seat][round];
+  renderHUD(null);
+  $("round-tag").textContent=R.tag; $("round-title").textContent=R.title;
+  $("round-brief").textContent=R.brief; $("round-readout").innerHTML=R.readout;
+  $("outcome-zone").innerHTML=""; $("confbox").classList.add("hidden");
+  $("conf").value=50; $("confval").textContent="50%";
+  $("opts").innerHTML=R.opts.map((o,i)=>`<button class="opt" onclick="pick(${i})"><span class="tag">Option ${"ABCD"[i]}</span><strong>${o.t}</strong><br><span class="small">${o.d}</span></button>`).join("");
+}
+
+function pick(i){ if(resolved)return; sel=i;
+  document.querySelectorAll(".opt").forEach((el,j)=>el.classList.toggle("sel",j===i));
+  $("conf-question").textContent=CONF_Q; $("confbox").classList.remove("hidden");
+  $("confbox").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+async function commit(){
+  if(sel<0||resolved)return; resolved=true; $("commit-btn").disabled=true;
+  const R=ROUNDS[seat][round], o=R.opts[sel];
+  const conf=parseInt($("conf").value)/100;
+  const roll=Math.random(); const success=roll<o.p;
+  const brier=Math.pow(conf-(success?1:0),2); briers.push(brier);
+  const prev={...M};
+  const f=success?1:0.45; const fq=success?1:1.6;
+  M.margin=Math.max(-10,M.margin+o.dm*f);
+  M.cost=Math.max(600,M.cost+o.dc*f+(success?0:120));
+  M.trust=Math.min(100,Math.max(0,M.trust+(o.dt<0?o.dt*fq:o.dt*f)));
+  M.board=Math.min(100,Math.max(0,M.board+(o.db<0?o.db*fq:o.db*f)));
+  const block={type:"DECISION",round:round+1,title:R.title,seat,ts:new Date().toISOString(),
+    decision:o.t,confidence:conf,pModel:o.p,roll:+roll.toFixed(4),outcome:success?"SUCCESS":"SETBACK",
+    brier:+brier.toFixed(4),metricsAfter:{...M},prevHash:chain[chain.length-1].hash};
+  block.hash=await sha(JSON.stringify({...block,hash:undefined}));
+  chain.push(block);
+  renderHUD(prev);
+  $("outcome-zone").innerHTML=`<div class="outcome ${success?"ok":"bad"}">
+    <div class="head">${success?"Outcome · Success":"Outcome · Setback"} · Confidence ${Math.round(conf*100)}% · Brier ${brier.toFixed(3)}</div>
+    <p>${success?o.ok:o.bad}</p>
+    <div class="btnrow"><button class="solid" onclick="next()">${round<4?"Proceed to next decision window":"Proceed to the board record"}</button></div>
+  </div>`;
+  $("commit-btn").disabled=false;
+  $("outcome-zone").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+function next(){ round++; if(round<5){renderRound();window.scrollTo({top:0,behavior:"smooth"})} else debrief(); }
+
+function debrief(){
+  $("scr-sim").classList.add("hidden"); $("scr-debrief").classList.remove("hidden"); window.scrollTo({top:0});
+  const avgB=briers.reduce((a,b)=>a+b,0)/briers.length;
+  const perf=(M.margin/TARGET_MARGIN)*40 + (M.board/100)*30 + (M.trust/100)*20 + (1-Math.min(avgB,0.5)/0.5)*10;
+  let grade="D"; if(perf>=85)grade="A"; else if(perf>=70)grade="B"; else if(perf>=55)grade="C";
+  if(M.margin>=TARGET_MARGIN&&grade==="A")grade="A+";
+  $("grade").textContent=grade;
+  $("final-metrics").innerHTML=`Gross margin  <b>${M.margin.toFixed(1)}%</b>  (target ≥ ${TARGET_MARGIN}%)\nAI cost/mo    <b>${fmt$(M.cost)}</b>  (start ${fmt$(START.cost)})\nTrust ${M.trust.toFixed(0)} · Board ${M.board.toFixed(0)}`;
+  const calibLabel=avgB<=0.10?"WELL CALIBRATED":avgB<=0.20?"ACCEPTABLE":avgB<=0.30?"OVERCONFIDENT":"POORLY CALIBRATED";
+  $("calib").innerHTML=`Mean Brier score  <b>${avgB.toFixed(3)}</b>\nAssessment: <b>${calibLabel}</b>\n${briers.map((b,i)=>"R"+(i+1)+" "+b.toFixed(2)).join(" · ")}`;
+  const contained=chain.filter(b=>b.outcome==="SUCCESS").length;
+  const dCost=START.cost-M.cost;
+  $("board-narrative").textContent =
+    `Over 90 days, the ${seat} executed five governed interventions on Magic Assist. Monthly AI cost moved from ${fmt$(START.cost)} to ${fmt$(M.cost)} (${dCost>=0?fmt$(dCost)+" reduction":fmt$(-dCost)+" increase"}), and feature gross margin moved from ${START.margin.toFixed(1)}% to ${M.margin.toFixed(1)}% against a ${TARGET_MARGIN}% target. ${contained} of 5 interventions achieved their stated objective; every decision, stated confidence, and outcome is recorded in a verifiable SHA-256 hash chain below. ${M.margin>=TARGET_MARGIN?"The feature's economics are restored and the capital-contract framework is now standing policy.":"The feature remains below its margin target; the record shows precisely which decisions to revisit, and with what evidence."} ${avgB<=0.15?"Stated confidence tracked realized outcomes closely — a decision-maker whose certainty can be priced.":"Stated confidence diverged from realized outcomes; calibration, not conviction, is the next skill to train."}`;
+  $("ledger").innerHTML=chain.map(b=>`<div class="block">[${b.type==="GENESIS"?"GENESIS":"R"+b.round}] ${b.type==="GENESIS"?"Simulation initialized · seat "+b.seat:b.title+" — "+b.decision+" → "+b.outcome+" (conf "+Math.round(b.confidence*100)+"%, Brier "+b.brier.toFixed(3)+")"}<br><span class="hash">${b.hash}</span></div>`).join("");
+}
+
+async function verifyChain(){
+  let ok=true;
+  for(let i=0;i<chain.length;i++){
+    const b=chain[i]; const h=await sha(JSON.stringify({...b,hash:undefined}));
+    if(h!==b.hash){ok=false;break}
+    if(i>0&&b.prevHash!==chain[i-1].hash){ok=false;break}
+  }
+  $("verify-result").innerHTML=ok?`<span class="verify-ok">✓ CHAIN VERIFIED — ${chain.length} blocks, every hash recomputed and linked. This record has not been altered.</span>`:`<span class="verify-bad">✗ CHAIN BROKEN — the record has been tampered with.</span>`;
+}
+
+function exportPack(){
+  const pack={artifact:"THE CANVA SHOCK · Evidence Pack",issuer:"The Studio · Leclezio Consulting Corporation",
+    generated:new Date().toISOString(),seat,finalMetrics:M,meanBrier:+(briers.reduce((a,b)=>a+b,0)/briers.length).toFixed(4),chain};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(pack,null,2)],{type:"application/json"}));
+  a.download="canva-shock-evidence-pack.json"; a.click();
+}
+</script>
+</body>
+</html>

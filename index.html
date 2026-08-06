@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI CAPITAL COMMAND — The Studio</title>
+<meta name="description" content="The autonomous CFO and capital-allocation system for enterprise AI. Simulator, audit instrument, and the 30-Day AI Economics Audit.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0A1628; --navy-deep:#060D1A; --navy-panel:#0F1E36; --navy-line:#1C2F4E;
+  --gold:#C9A227; --gold-bright:#E4C158; --cream:#F5F0E4; --cream-dim:#C9C2AE;
+  --disp:'Space Grotesk',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--navy-deep);color:var(--cream);font-family:var(--disp);min-height:100vh;line-height:1.55}
+.wrap{max-width:1000px;margin:0 auto;padding:52px 20px 80px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.28em;color:var(--gold);text-transform:uppercase}
+h1{font-size:clamp(38px,7vw,66px);font-weight:700;letter-spacing:-.02em;line-height:1.0;margin:12px 0 10px}
+.sub{color:var(--cream-dim);max-width:640px;font-size:16px}
+.rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:30px 0}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.cards{grid-template-columns:1fr}}
+a.card{display:block;text-decoration:none;color:var(--cream);background:var(--navy-panel);border:1px solid var(--navy-line);border-radius:6px;padding:28px;transition:border-color .15s,transform .15s}
+a.card:hover{border-color:var(--gold);transform:translateY(-3px)}
+a.card h2{font-size:22px;margin:10px 0 8px}
+a.card p{font-size:13.5px;color:var(--cream-dim)}
+a.card .go{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--gold);margin-top:16px;display:inline-block;text-transform:uppercase}
+.seal{width:58px;height:58px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--gold);text-align:center;line-height:1.3;margin-bottom:16px;animation:sealIn 1.1s ease}
+@keyframes sealIn{from{opacity:0;transform:rotate(-16deg) scale(.85)}to{opacity:1;transform:none}}
+.foot{margin-top:44px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--cream-dim)}
+.foot span{color:var(--gold)}
+.thesis{border-left:2px solid var(--gold);padding-left:18px;margin:26px 0;max-width:680px;color:var(--cream-dim);font-size:14.5px}
+@media (prefers-reduced-motion:reduce){.seal{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="seal">THE<br>STUDIO</div>
+  <div class="eyebrow">The Studio · Flagship · Leclezio Consulting Corporation</div>
+  <h1>AI CAPITAL COMMAND</h1>
+  <p class="sub">Most tools tell a company what its AI spent. This system decides what each AI capability is allowed to cost, whether it deserves continued funding, and what must change before it destroys margin.</p>
+  <div class="thesis">The budget stops being a figure in a spreadsheet and becomes executable policy — enforced before the expenditure, not explained after the invoice.</div>
+  <div class="rule"></div>
+  <div class="cards">
+    <a class="card" href="/canva-shock/">
+      <div class="eyebrow">CS-01 · Crisis Simulation</div>
+      <h2>THE CANVA SHOCK</h2>
+      <p>Your flagship AI feature is a runaway success — and it is quietly destroying gross margin. Take the CFO or CAIO seat. Five decision windows, Brier-scored calibration, and a SHA-256 hash-chained record of everything you sign.</p>
+      <span class="go">Enter the simulation →</span>
+    </a>
+    <a class="card" href="/xray/">
+      <div class="eyebrow">XR-01 · Audit Instrument</div>
+      <h2>AI SPEND X-RAY</h2>
+      <p>Load your usage exports and receive true AI spend, unallocated cost, cost-per-outcome verdicts, margin forecasts, and a board-grade report — sealed in a verifiable evidence chain. Nothing leaves your browser.</p>
+      <span class="go">Run the X-Ray →</span>
+    </a>
+  </div>
+  <div class="foot">RICHARDLECLEZIO.COM · <span>THE 30-DAY AI ECONOMICS AUDIT</span> · SHA-256 EVIDENCE ARCHITECTURE</div>
+</div>
+</body>
+</html>

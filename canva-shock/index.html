@@ -81,6 +81,14 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 .pip{flex:1;height:3px;background:var(--navy-line);border-radius:2px}
 .pip.done{background:var(--gold)}
 @media (prefers-reduced-motion:reduce){.seal{animation:none}}
+#narrator-btn{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--navy-panel);border:1.5px solid var(--gold);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:999;transition:all .2s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+#narrator-btn:hover{background:var(--gold);color:var(--navy-deep);transform:scale(1.08)}
+#narrator-btn.speaking{animation:pulse-ring 1.8s ease infinite;border-color:var(--gold-bright);color:var(--gold-bright)}
+#narrator-btn.muted{opacity:.45;border-color:var(--navy-line);color:var(--cream-dim)}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(201,162,39,.35)}50%{box-shadow:0 0 0 10px rgba(201,162,39,0)}}
+.listen-btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--gold);background:none;border:1px solid var(--gold);padding:8px 16px;border-radius:4px;cursor:pointer;text-transform:uppercase;margin-top:16px;transition:all .15s}
+.listen-btn:hover{background:var(--gold);color:var(--navy-deep)}
+.listen-btn svg{width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -112,6 +120,10 @@ input[type=range]{width:100%;accent-color:var(--gold)}
     </div>
   </div>
   <p class="small" style="margin-top:18px">Each round you will state a confidence estimate before the outcome resolves. Calibration is scored with the Brier method, exactly as in THE COMMAND. Your full record exports as a verifiable SHA-256 evidence pack.</p>
+  <button class="listen-btn" onclick="narrateIntro()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+    Listen to briefing
+  </button>
 </section>
 
 <!-- ============ SIM ============ -->
@@ -169,7 +181,53 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 </section>
 
 </div>
+<button id="narrator-btn" title="Narration" onclick="Narrator.toggle()">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+</button>
 <script>
+/* ================= NARRATOR ================= */
+const Narrator={
+  queue:[],playing:false,muted:false,audio:null,cache:new Map(),
+  async speak(text){
+    if(this.muted)return;
+    this.queue.push(text);
+    if(!this.playing)this._next();
+  },
+  async _next(){
+    if(!this.queue.length){this.playing=false;this._ui();return}
+    this.playing=true;this._ui();
+    const text=this.queue.shift();
+    try{
+      let blob=this.cache.get(text);
+      if(!blob){
+        const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+        if(!r.ok)throw new Error('TTS failed');
+        blob=await r.blob();this.cache.set(text,blob);
+      }
+      this.audio=new Audio(URL.createObjectURL(blob));
+      this.audio.onended=()=>this._next();
+      this.audio.onerror=()=>this._next();
+      await this.audio.play();
+    }catch(e){console.error('Narration:',e);this._next()}
+  },
+  stop(){this.queue=[];if(this.audio){this.audio.pause();this.audio=null}this.playing=false;this._ui()},
+  toggle(){this.muted=!this.muted;if(this.muted)this.stop();this._ui()},
+  _ui(){
+    const b=document.getElementById('narrator-btn');if(!b)return;
+    b.classList.toggle('speaking',this.playing);
+    b.classList.toggle('muted',this.muted);
+    b.title=this.muted?'Unmute narration':this.playing?'Speaking...':'Narration';
+    b.innerHTML=this.muted
+      ?'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
+      :'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+  }
+};
+function stripHTML(s){return s.replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\s+/g,' ').trim()}
+function narrateIntro(){
+  Narrator.stop();
+  Narrator.speak("The Canva Shock. Your company's flagship AI feature is a runaway success. And it is quietly destroying gross margin. You have five decision windows before the board meets. Every decision you sign is hash-chained. Nothing can be unsaid. Lumina Studio is a design platform with 180 million monthly users. Its AI feature, Magic Assist, has reached 1.42 million monthly interactions and is climbing 11 percent month over month. Margin Sentinel projects the feature turns gross-margin negative in roughly nine weeks. The board meets in 90 days. Choose your seat.");
+}
+
 /* ================= SCENARIO DATA ================= */
 const START = {margin:18.0, cost:2400, trust:62, board:70};
 const TARGET_MARGIN = 25;
@@ -274,6 +332,9 @@ async function startSim(s){
   const g={type:"GENESIS",sim:"THE CANVA SHOCK",seat:s,ts:new Date().toISOString(),start:START};
   g.prevHash="0".repeat(64); g.hash=await sha(JSON.stringify({...g,hash:undefined}));
   chain.push(g); renderRound(); window.scrollTo({top:0});
+  const seatName=s==="CFO"?"Chief Financial Officer":"Chief AI Officer";
+  Narrator.stop();
+  Narrator.speak(`You have taken the ${seatName} seat. ${ROUNDS[s][0].brief}`);
 }
 
 function renderHUD(prev){
@@ -334,9 +395,18 @@ async function commit(){
   </div>`;
   $("commit-btn").disabled=false;
   $("outcome-zone").scrollIntoView({behavior:"smooth",block:"nearest"});
+  Narrator.stop();
+  Narrator.speak((success?"Success. ":"Setback. ")+(success?o.ok:o.bad));
 }
 
-function next(){ round++; if(round<5){renderRound();window.scrollTo({top:0,behavior:"smooth"})} else debrief(); }
+function next(){
+  round++;
+  if(round<5){
+    renderRound();window.scrollTo({top:0,behavior:"smooth"});
+    Narrator.stop();
+    Narrator.speak(ROUNDS[seat][round].brief);
+  } else debrief();
+}
 
 function debrief(){
   $("scr-sim").classList.add("hidden"); $("scr-debrief").classList.remove("hidden"); window.scrollTo({top:0});
@@ -353,6 +423,8 @@ function debrief(){
   $("board-narrative").textContent =
     `Over 90 days, the ${seat} executed five governed interventions on Magic Assist. Monthly AI cost moved from ${fmt$(START.cost)} to ${fmt$(M.cost)} (${dCost>=0?fmt$(dCost)+" reduction":fmt$(-dCost)+" increase"}), and feature gross margin moved from ${START.margin.toFixed(1)}% to ${M.margin.toFixed(1)}% against a ${TARGET_MARGIN}% target. ${contained} of 5 interventions achieved their stated objective; every decision, stated confidence, and outcome is recorded in a verifiable SHA-256 hash chain below. ${M.margin>=TARGET_MARGIN?"The feature's economics are restored and the capital-contract framework is now standing policy.":"The feature remains below its margin target; the record shows precisely which decisions to revisit, and with what evidence."} ${avgB<=0.15?"Stated confidence tracked realized outcomes closely — a decision-maker whose certainty can be priced.":"Stated confidence diverged from realized outcomes; calibration, not conviction, is the next skill to train."}`;
   $("ledger").innerHTML=chain.map(b=>`<div class="block">[${b.type==="GENESIS"?"GENESIS":"R"+b.round}] ${b.type==="GENESIS"?"Simulation initialized · seat "+b.seat:b.title+" — "+b.decision+" → "+b.outcome+" (conf "+Math.round(b.confidence*100)+"%, Brier "+b.brier.toFixed(3)+")"}<br><span class="hash">${b.hash}</span></div>`).join("");
+  Narrator.stop();
+  Narrator.speak("The Verdict. Command Grade: "+grade+". "+$("board-narrative").textContent);
 }
 
 async function verifyChain(){

@@ -88,6 +88,14 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   .report{border-radius:0;padding:20px}
 }
 @media (prefers-reduced-motion:reduce){.seal{animation:none}}
+#narrator-btn{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--navy-panel);border:1.5px solid var(--gold);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:999;transition:all .2s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+#narrator-btn:hover{background:var(--gold);color:var(--navy-deep);transform:scale(1.08)}
+#narrator-btn.speaking{animation:pulse-ring 1.8s ease infinite;border-color:var(--gold-bright);color:var(--gold-bright)}
+#narrator-btn.muted{opacity:.45;border-color:var(--navy-line);color:var(--cream-dim)}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(201,162,39,.35)}50%{box-shadow:0 0 0 10px rgba(201,162,39,0)}}
+.listen-btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--gold);background:none;border:1px solid var(--gold);padding:8px 16px;border-radius:4px;cursor:pointer;text-transform:uppercase;margin-top:16px;transition:all .15s}
+.listen-btn:hover{background:var(--gold);color:var(--navy-deep)}
+.listen-btn svg{width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -98,6 +106,10 @@ input[type=range]{width:100%;accent-color:var(--gold)}
   <div class="eyebrow">Leclezio Consulting · Audit Instrument · XR-01</div>
   <h1>AI SPEND X-RAY</h1>
   <p class="sub">The instrument behind the 30-Day AI Economics Audit. Load your usage exports; receive true AI spend, unallocated cost, cost-per-outcome verdicts, margin forecasts, and a board-grade report — sealed in a verifiable SHA-256 evidence chain. <strong style="color:var(--gold-bright)">Nothing leaves this browser.</strong> No upload, no server, no telemetry.</p>
+  <button class="listen-btn" onclick="narrateXrayIntro()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+    Listen to briefing
+  </button>
 </header>
 
 <nav class="tabs no-print" id="tabs">
@@ -214,6 +226,53 @@ input[type=range]{width:100%;accent-color:var(--gold)}
 </section>
 
 </div>
+<button id="narrator-btn" title="Narration" onclick="Narrator.toggle()">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+</button>
+<script>
+/* ============ NARRATOR ============ */
+const Narrator={
+  queue:[],playing:false,muted:false,audio:null,cache:new Map(),
+  async speak(text){
+    if(this.muted)return;
+    this.queue.push(text);
+    if(!this.playing)this._next();
+  },
+  async _next(){
+    if(!this.queue.length){this.playing=false;this._ui();return}
+    this.playing=true;this._ui();
+    const text=this.queue.shift();
+    try{
+      let blob=this.cache.get(text);
+      if(!blob){
+        const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+        if(!r.ok)throw new Error('TTS failed');
+        blob=await r.blob();this.cache.set(text,blob);
+      }
+      this.audio=new Audio(URL.createObjectURL(blob));
+      this.audio.onended=()=>this._next();
+      this.audio.onerror=()=>this._next();
+      await this.audio.play();
+    }catch(e){console.error('Narration:',e);this._next()}
+  },
+  stop(){this.queue=[];if(this.audio){this.audio.pause();this.audio=null}this.playing=false;this._ui()},
+  toggle(){this.muted=!this.muted;if(this.muted)this.stop();this._ui()},
+  _ui(){
+    const b=document.getElementById('narrator-btn');if(!b)return;
+    b.classList.toggle('speaking',this.playing);
+    b.classList.toggle('muted',this.muted);
+    b.title=this.muted?'Unmute narration':this.playing?'Speaking...':'Narration';
+    b.innerHTML=this.muted
+      ?'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
+      :'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+  }
+};
+function stripHTML(s){return s.replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\s+/g,' ').trim()}
+function narrateXrayIntro(){
+  Narrator.stop();
+  Narrator.speak("AI Spend X-Ray. The instrument behind the 30-Day AI Economics Audit. Load your usage exports and receive true AI spend, unallocated cost, cost-per-outcome verdicts, margin forecasts, and a board-grade report. Sealed in a verifiable SHA-256 evidence chain. Nothing leaves this browser. No upload. No server. No telemetry.");
+}
+</script>
 <script>
 /* ============ STATE ============ */
 let usage=[], extra=[], budget=0, agg=null, outcomes=null, forecast=null, chain=[], reportText="";
@@ -317,6 +376,8 @@ async function runXray(){
   renderLedger(); buildOutcomeInputs();
   ["ledger","outcomes","forecast"].forEach(unlock);
   go("ledger");
+  Narrator.stop();
+  Narrator.speak(stripHTML($("ledger-note").innerHTML));
 }
 
 async function push(type,payload){
@@ -378,6 +439,13 @@ async function calcOutcomes(){
   $("outcome-results-panel").classList.remove("hidden");
   await push("OUTCOMES",{verdicts:outcomes.map(o=>({workload:o.w,costPerOutcome:o.cpo!=null?+o.cpo.toFixed(4):null,valueRatio:+o.ratio.toFixed(3),verdict:o.verdict}))});
   renderForecast();
+  const scale=outcomes.filter(o=>o.verdict==="SCALE"), term=outcomes.filter(o=>o.verdict==="TERMINATE"), redesign=outcomes.filter(o=>o.verdict==="REDESIGN");
+  let verdictNarr="Capital verdicts are in. ";
+  if(scale.length)verdictNarr+=scale.map(o=>o.w).join(", ")+(scale.length>1?" warrant":" warrants")+" scaled investment. ";
+  if(redesign.length)verdictNarr+=redesign.map(o=>o.w).join(", ")+(redesign.length>1?" require":" requires")+" redesign before further funding. ";
+  if(term.length)verdictNarr+=term.map(o=>o.w).join(", ")+" should be terminated or fundamentally restructured. ";
+  Narrator.stop();
+  Narrator.speak(verdictNarr);
 }
 
 /* ============ FORECAST ============ */
@@ -405,6 +473,7 @@ function renderForecast(){
    <div class="kpi warn"><div class="lab">Annualized waste</div><div class="val">${money(agg.waste*12)}</div></div>`;
   $("fc-note").innerHTML=`<strong style="color:var(--gold-bright)">Finding.</strong> At ${Math.round(g*100)}% monthly growth, ${budget?(breach?`AI spend breaches the approved ${money(budget)} budget in month ${breach} — the time to act is before that month, not after the invoice that proves it.`:`AI spend stays within the approved ${money(budget)} budget across 12 months at this growth rate.`):"no budget was set — an AI estate without a budget boundary is a forecast, not a plan."} Retry and failure waste annualizes to ${money(agg.waste*12)} — recoverable with routing and circuit-breaker discipline, no quality trade required.`;
   unlock("report");
+  if(!window._forecastNarrated){window._forecastNarrated=true;Narrator.stop();Narrator.speak(stripHTML($("fc-note").innerHTML))}
 }
 
 /* ============ REPORT ============ */
@@ -432,6 +501,8 @@ async function buildReport(){
   $("board-report").innerHTML=html;
   reportText=$("board-report").innerText;
   await push("FORECAST",{growth:f.growth,breachMonth:f.breachMonth,month12Total:+f.month12Total.toFixed(2)});
+  Narrator.stop();
+  Narrator.speak("The board report is ready. "+stripHTML($("board-report").querySelector("p").innerHTML));
   unlock("report");unlock("evidence");
 }
 

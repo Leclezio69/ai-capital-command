@@ -33,6 +33,14 @@ a.card .go{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(
 .foot span{color:var(--gold)}
 .thesis{border-left:2px solid var(--gold);padding-left:18px;margin:26px 0;max-width:680px;color:var(--cream-dim);font-size:14.5px}
 @media (prefers-reduced-motion:reduce){.seal{animation:none}}
+#narrator-btn{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--navy-panel);border:1.5px solid var(--gold);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:999;transition:all .2s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+#narrator-btn:hover{background:var(--gold);color:var(--navy-deep);transform:scale(1.08)}
+#narrator-btn.speaking{animation:pulse-ring 1.8s ease infinite;border-color:var(--gold-bright);color:var(--gold-bright)}
+#narrator-btn.muted{opacity:.45;border-color:var(--navy-line);color:var(--cream-dim)}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(201,162,39,.35)}50%{box-shadow:0 0 0 10px rgba(201,162,39,0)}}
+.listen-btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--gold);background:none;border:1px solid var(--gold);padding:8px 16px;border-radius:4px;cursor:pointer;text-transform:uppercase;margin-top:16px;transition:all .15s}
+.listen-btn:hover{background:var(--gold);color:var(--navy-deep)}
+.listen-btn svg{width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -57,7 +65,57 @@ a.card .go{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(
       <span class="go">Run the X-Ray →</span>
     </a>
   </div>
+  <button class="listen-btn" onclick="narratePage()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+    Listen
+  </button>
   <div class="foot">RICHARDLECLEZIO.COM · <span>THE 30-DAY AI ECONOMICS AUDIT</span> · SHA-256 EVIDENCE ARCHITECTURE</div>
 </div>
+<button id="narrator-btn" title="Narration" onclick="Narrator.toggle()">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+</button>
+<script>
+const Narrator={
+  queue:[],playing:false,muted:false,audio:null,cache:new Map(),
+  async speak(text){
+    if(this.muted)return;
+    this.queue.push(text);
+    if(!this.playing)this._next();
+  },
+  async _next(){
+    if(!this.queue.length){this.playing=false;this._ui();return}
+    this.playing=true;this._ui();
+    const text=this.queue.shift();
+    try{
+      let blob=this.cache.get(text);
+      if(!blob){
+        const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+        if(!r.ok)throw new Error('TTS failed');
+        blob=await r.blob();this.cache.set(text,blob);
+      }
+      this.audio=new Audio(URL.createObjectURL(blob));
+      this.audio.onended=()=>this._next();
+      this.audio.onerror=()=>this._next();
+      await this.audio.play();
+    }catch(e){console.error('Narration:',e);this._next()}
+  },
+  stop(){this.queue=[];if(this.audio){this.audio.pause();this.audio=null}this.playing=false;this._ui()},
+  toggle(){this.muted=!this.muted;if(this.muted)this.stop();this._ui()},
+  _ui(){
+    const b=document.getElementById('narrator-btn');if(!b)return;
+    b.classList.toggle('speaking',this.playing);
+    b.classList.toggle('muted',this.muted);
+    b.title=this.muted?'Unmute narration':this.playing?'Speaking...':'Narration';
+    b.innerHTML=this.muted
+      ?'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>'
+      :'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+  }
+};
+
+function narratePage(){
+  Narrator.stop();
+  Narrator.speak("Welcome to AI Capital Command. The capital allocation layer for enterprise AI. Most tools tell a company what its AI spent. This system decides what each AI capability is allowed to cost, whether it deserves continued funding, and what must change before it destroys margin. The budget stops being a figure in a spreadsheet and becomes executable policy. Enforced before the expenditure. Not explained after the invoice.");
+}
+</script>
 </body>
 </html>
